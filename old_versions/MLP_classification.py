@@ -2,15 +2,17 @@
 In this program, I use the trained embeddings from Doc2Vec model and train a simple 2 layer NN for classifying good and bad patents
 '''
 import gensim
+import argparse
 import pandas as pd
 import torch
-from Models.MLP import MLP
+from Model.MLP import MLP
 import torch.nn as nn
 import numpy as np
 from Utils import AmazonReviewDataset
 from sklearn.metrics import accuracy_score, roc_auc_score
 from skorch import NeuralNetClassifier
 from sklearn.model_selection import cross_val_score
+from Dataset import breast_cancer
 import os
 '''
 Resources:
@@ -33,9 +35,9 @@ def Train(model, criterion, optimizer, patent_data, epoch, device):
     for epoch in range(epoch):
         for i, (x, y) in enumerate(patent_data):
             x, y = x.to(device), y.to(device)
+            optimizer.zero_grad()
             outputs = model(x)
             loss = criterion(outputs, y)
-            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
@@ -68,7 +70,7 @@ def MainA(pth,fil_a,fil_b):
     else:
         device = torch.device('cpu')
 
-    i_dim, o_dim = 300, 2
+    i_dim, o_dim = 300, 5
     h_dim, d_rate = 100, 0.2
     epoch = 100
     data = AmazonReviewDataset(pth, fil_a, fil_b)
@@ -119,7 +121,10 @@ def MainB(pth,fil_a,fil_b):
 
 if __name__ == '__main__':
 
-    pth = '/Users/vineeth/OneDrive - Interdigital Communications Inc/DataRepo/AmazonReviews/Musical_Instrument/'
+    parser = argparse.ArgumentParser('')
+    parser.add_argument('-d','--dataset',help='datasets 1. breast_cancer 2. amazon_reviews', default='breast_cancer')
+    
+    pth = '/home/vineeth/Documents/DataRepo/AmazonReviews/Musical_Instrument/'
     fil_a = 'Musical_Instrument_reviews.d2v'
     fil_b = 'reviews_Musical_Instruments.json'
     MainA(pth,fil_a,fil_b)

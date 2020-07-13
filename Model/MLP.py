@@ -32,5 +32,4 @@ class MLP(nn.Module):
         x = self.l1_drop(x)
         x = F.relu(self.l2(x))
         x = self.l2_drop(x)
-        # not sure why we give dim=1
-        return F.log_softmax(self.ol(x),dim=1)
+        return self.ol(x)
