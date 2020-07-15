@@ -4,6 +4,6 @@
 *.pkl
 *.xml
 *.iml
-.pyc
+*.pyc
 venv*
 .idea

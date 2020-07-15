@@ -5,29 +5,20 @@ import numpy as np
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import DataLoader
 import pandas as pd
+import pdb
+
+DATA_LOC = '/data/DataRepo/'
+
 # needs sklearn 0.23 +
-DATA_LUKUP = {'breast_cancer':load_breast_cancer(as_frame=True)}
-
-class old_breastCancerDataset(torch.utils.data.Dataset):
-  def __init__(self):
-    data = load_breast_cancer()
-
-    self.X = data.data
-    self.y = data.target
-    self.shape = self.X.shape
-
-  def __getitem__(self, idx):
-    return self.X[idx], self.y[idx]
-
-  def __len__(self):
-    return len(self.X)
+DATA_LUKUP = {'breast_cancer':load_breast_cancer(as_frame=True), 
+'litcovid':'Covid19Classification/LitCovid_doc2vec_embeddings.json'}
 
 class custom_data_loader(torch.utils.data.Dataset):
 
   def __init__(self, df):
-    # self.X = torch.FloatTensor(df.loc[:, df.columns != 'label'].values)
     self.X = df.loc[:, df.columns != 'label']
-    self.X = (self.X-self.X.mean())/self.X.std()
+    # if an unormalized dataset you need to normalize as follows
+    # self.X = (self.X-self.X.mean())/self.X.std()
     self.X = torch.FloatTensor(self.X.values)
     self.y = torch.LongTensor(df.label.values)
     # self.y = torch.FloatTensor(df.label.values)
@@ -43,14 +34,18 @@ class custom_data_loader(torch.utils.data.Dataset):
 class DataRepo:
 
   def __call__(self, name, is_valid=False, train_batch_sz=256, test_batch_sz=512):
-
-    data = DATA_LUKUP[name]
+    
+    data = pd.read_json(DATA_LOC+DATA_LUKUP[name], lines=True)
     if isinstance(data, sklearn.utils.Bunch):
       df = pd.DataFrame(data.data, columns=data.feature_names)
       df['label'] = pd.Series(data.target)
-
+    else:
+      
+      df = pd.DataFrame(data["embedings"].to_list(), columns=['feature'+str(i) for i in range(len(data["embedings"].iloc[0]))])
+      df['label'] = pd.Series(data.label)
     i_channel = 1
     n_classes = len(df['label'].unique())
+    pdb.set_trace()
     # if n_classes <= 2:
     #   n_classes = 1
     train_d = custom_data_loader(df)
@@ -84,5 +79,6 @@ class DataRepo:
 
 if __name__ == '__main__':
 
-  name = 'breast_cancer'
-  GetData(name)
+  obj = DataRepo()
+  obj('litcovid')
+  

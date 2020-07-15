@@ -18,6 +18,7 @@ from tqdm import tqdm
 from torch.utils.data.sampler import SubsetRandomSampler
 from Utils import EarlyStopping
 import torch.nn.functional as F
+import pdb
 
 torch.manual_seed(33)
 np.random.seed(33)
@@ -65,6 +66,7 @@ class RunModel:
         data_repo = DataRepo()
         self.n_classes, self.i_channel, self.i_dim, self.train_len, self.valid_len,\
         self.test_len, self.train_loader, self.valid_loader, self.test_loader = data_repo(self.d_name, True, self.tr_b_sz, self.tst_b_sz)
+        pdb.set_trace()
         if self.n_classes == 1:
             self.criterion = nn.BCEWithLogitsLoss()
         else:
@@ -199,10 +201,10 @@ class RunModel:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='CNN self.models that use CIFAR10')
+    parser = argparse.ArgumentParser(description='')
     parser.add_argument('-m', '--model', help='model name 1.lenet300-100', default='lenet300-100')
     parser.add_argument('-test','--test',help='if you want to run in test mode', action='store_true')
-    parser.add_argument('-d','--dataset',help='datasets 1. breast_cancer 2. amazon_reviews', default='breast_cancer')
+    parser.add_argument('-d','--dataset',help='datasets 1. breast_cancer 2. litcovid', default='breast_cancer')
     parser.add_argument('-e', '--epochs', help='number of epochs', default=150, type=int)
     parser.add_argument('-lr', '--learning_rate', help='learning rate', default=0.001, type=float)
     parser.add_argument('-op', '--optimizer', help='optimizer types, 1. SGD 2. Adam, default SGD', default='Adam')

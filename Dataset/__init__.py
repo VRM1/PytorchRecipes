@@ -1,1 +1,1 @@
-from .datasets import DataRepo, old_breastCancerDataset
+from .datasets import DataRepo
