@@ -14,12 +14,12 @@ class Lenet300_100(nn.Module):
         # dropout rate
         self.d_rate = d_rate
         # define a fully connected layer
-        self.l1 = nn.Linear(self.i_dim ,300)
+        self.l1 = nn.Linear(self.i_dim ,512)
         # define the dropout layer
         # define a second FCN
-        self.l2 = nn.Linear(300,100)
+        self.l2 = nn.Linear(512,256)
         # define the final prediction layer
-        self.ol = nn.Linear(100,self.o_dim)
+        self.ol = nn.Linear(256,self.o_dim)
 
     def forward(self,x):
 

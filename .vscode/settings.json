@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "/home/vineeth/anaconda3/envs/pytorch_gpu/bin/python"
+    "python.pythonPath": "/home/vineeth/anaconda3/envs/pytorch_gpu/bin/python",
+    "python.condaPath": "/home/vineeth/anaconda3/envs/pytorch_gpu/bin/python"
 }

@@ -11,24 +11,25 @@ DATA_LOC = '/data/DataRepo/'
 
 # needs sklearn 0.23 +
 DATA_LUKUP = {'breast_cancer':load_breast_cancer(as_frame=True), 
-'litcovid':'Covid19Classification/LitCovid_doc2vec_embeddings.json'}
+'covid19':'Covid19Classification/LitCovid_doc2vec_embeddings.json',
+"long_document":"LongDocumentClassification/LongDocumentDataset_doc2vec_embeddings.json"}
 
 class custom_data_loader(torch.utils.data.Dataset):
 
   def __init__(self, df):
-    self.X = df.loc[:, df.columns != 'label']
+    self.x = df.loc[:, df.columns != 'label']
     # if an unormalized dataset you need to normalize as follows
     # self.X = (self.X-self.X.mean())/self.X.std()
-    self.X = torch.FloatTensor(self.X.values)
+    self.x = torch.FloatTensor(self.x.values)
     self.y = torch.LongTensor(df.label.values)
     # self.y = torch.FloatTensor(df.label.values)
-    self.shape = self.X.shape
+    self.shape = self.x.shape
   
   def __getitem__(self, idx):
-    return self.X[idx], self.y[idx]
+    return self.x[idx], self.y[idx]
   
   def __len__(self):
-    return len(self.X)
+    return len(self.x)
 
 
 class DataRepo:
@@ -45,7 +46,6 @@ class DataRepo:
       df['label'] = pd.Series(data.label)
     i_channel = 1
     n_classes = len(df['label'].unique())
-    pdb.set_trace()
     # if n_classes <= 2:
     #   n_classes = 1
     train_d = custom_data_loader(df)
@@ -80,5 +80,5 @@ class DataRepo:
 if __name__ == '__main__':
 
   obj = DataRepo()
-  obj('litcovid')
+  obj('long_document')
   

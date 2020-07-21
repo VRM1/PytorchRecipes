@@ -45,7 +45,7 @@ class RunModel:
     def __init__(self, args):
 
         self.epochs = 150
-        self.tr_b_sz = 128
+        self.tr_b_sz = args.b_sz
         self.tst_b_sz = 512
         self.test_mode = args.test
         self.is_bayesian = args.is_bayesian
@@ -66,7 +66,6 @@ class RunModel:
         data_repo = DataRepo()
         self.n_classes, self.i_channel, self.i_dim, self.train_len, self.valid_len,\
         self.test_len, self.train_loader, self.valid_loader, self.test_loader = data_repo(self.d_name, True, self.tr_b_sz, self.tst_b_sz)
-        pdb.set_trace()
         if self.n_classes == 1:
             self.criterion = nn.BCEWithLogitsLoss()
         else:
@@ -119,7 +118,7 @@ class RunModel:
         else:
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=l_rate)
 
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[150,250,300], gamma=0.1)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[100,150,200], gamma=0.1)
 
     def train(self):
 
@@ -204,7 +203,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('-m', '--model', help='model name 1.lenet300-100', default='lenet300-100')
     parser.add_argument('-test','--test',help='if you want to run in test mode', action='store_true')
-    parser.add_argument('-d','--dataset',help='datasets 1. breast_cancer 2. litcovid', default='breast_cancer')
+    parser.add_argument('-b', '--b_sz', help='batch size', default=256, type=int)
+    parser.add_argument('-d','--dataset',help='datasets 1. breast_cancer 2. covid19 3. long_document', default='breast_cancer')
     parser.add_argument('-e', '--epochs', help='number of epochs', default=150, type=int)
     parser.add_argument('-lr', '--learning_rate', help='learning rate', default=0.001, type=float)
     parser.add_argument('-op', '--optimizer', help='optimizer types, 1. SGD 2. Adam, default SGD', default='Adam')
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     run_model = RunModel(args)
 
     if not args.test:
-        patience = 50
+        patience = 5
         start_epoch = 0
         if args.resume:
             start_epoch = run_model.start_epoch
