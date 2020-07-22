@@ -17,8 +17,7 @@ from Dataset import DataRepo
 from tqdm import tqdm
 from torch.utils.data.sampler import SubsetRandomSampler
 from Utils import EarlyStopping
-import torch.nn.functional as F
-import pdb
+from Utils import LogSummary
 
 torch.manual_seed(33)
 np.random.seed(33)
@@ -64,8 +63,9 @@ class RunModel:
         self.train_weight_path = 'trained_weights/' + self.m_name + '-' + self.d_name + '-' + str(self.epochs) + \
                                  '-' + str(self.tr_b_sz) + '.pth'
         data_repo = DataRepo()
-        self.n_classes, self.i_channel, self.i_dim, self.train_len, self.valid_len,\
-        self.test_len, self.train_loader, self.valid_loader, self.test_loader = data_repo(self.d_name, True, self.tr_b_sz, self.tst_b_sz)
+        self.n_classes, self.i_channel, self.i_dim, self.train_len, self.valid_len, \
+        self.test_len, self.train_loader, self.valid_loader, self.test_loader = data_repo(self.d_name, True,
+                                                                                          self.tr_b_sz, self.tst_b_sz)
         if self.n_classes == 1:
             self.criterion = nn.BCEWithLogitsLoss()
         else:
@@ -91,11 +91,11 @@ class RunModel:
             # torch.nn.DataParallel(self.model.features)
             t_param = sum(p.numel() for p in self.model.parameters())
 
-
         if self.resume:
             self.__load_pre_train_model()
-        print('Running Mode:{}, #TrainingSamples:{}, #ValidationSamples:{}, #TestSamples:{}, #Parameters:{} ResumingFromEpoch:{}'
-              .format(self.m_name, self.train_len, self.valid_len, self.test_len, t_param, self.start_epoch))
+        print(
+            'Running Mode:{}, #TrainingSamples:{}, #ValidationSamples:{}, #TestSamples:{}, #Parameters:{} ResumingFromEpoch:{}'
+            .format(self.m_name, self.train_len, self.valid_len, self.test_len, t_param, self.start_epoch))
 
     def __load_pre_train_model(self):
 
@@ -118,7 +118,7 @@ class RunModel:
         else:
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=l_rate)
 
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[100,150,200], gamma=0.1)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[100, 150, 200], gamma=0.1)
 
     def train(self):
 
@@ -176,7 +176,6 @@ class RunModel:
                 X, Y = X.to(DEVICE), Y.to(DEVICE)
                 outputs = self.model(X)
 
-
                 if self.n_classes != 1:
                     _, predicted = outputs.max(1)
                 else:
@@ -202,9 +201,10 @@ class RunModel:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('-m', '--model', help='model name 1.lenet300-100', default='lenet300-100')
-    parser.add_argument('-test','--test',help='if you want to run in test mode', action='store_true')
+    parser.add_argument('-test', '--test', help='if you want to run in test mode', action='store_true')
     parser.add_argument('-b', '--b_sz', help='batch size', default=256, type=int)
-    parser.add_argument('-d','--dataset',help='datasets 1. breast_cancer 2. covid19 3. long_document', default='breast_cancer')
+    parser.add_argument('-d', '--dataset', help='datasets 1. breast_cancer 2. covid19 3. long_document',
+                        default='breast_cancer')
     parser.add_argument('-e', '--epochs', help='number of epochs', default=150, type=int)
     parser.add_argument('-lr', '--learning_rate', help='learning rate', default=0.001, type=float)
     parser.add_argument('-op', '--optimizer', help='optimizer types, 1. SGD 2. Adam, default SGD', default='Adam')
@@ -214,7 +214,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     run_model = RunModel(args)
-
+    write_summary = LogSummary(name=args.model + '_ba' + str(int(args.is_bayesian)) + '_' + args.dataset + '_' +
+                                    str(args.b_sz) + '_' + str(args.epochs))
     if not args.test:
         patience = 5
         start_epoch = 0
@@ -233,13 +234,16 @@ if __name__ == '__main__':
             if early_stopping.early_stop:
                 break
             if args.is_valid:
-                print('Epoch:{}, Lr:{} AvgTrainLoss:{:.3f}, TrainAccuracy:{:.2f}, ValidationAccuracy:{:.2f}, TestAccuracy:{:.2f}'
-                      .format(e, run_model.scheduler.get_lr(), avg_train_loss, train_accuracy, valid_accuracy, tst_accuracy))
+                print(
+                    'Epoch:{}, Lr:{} AvgTrainLoss:{:.3f}, TrainAccuracy:{:.2f}, ValidationAccuracy:{:.2f}, TestAccuracy:{:.2f}'
+                    .format(e, run_model.scheduler.get_lr(), avg_train_loss, train_accuracy, valid_accuracy,
+                            tst_accuracy))
             else:
                 print('Epoch:{}, Lr:{}, AvgTrainLoss:{:.3f}, TrainAccuracy:{:.2f}, TestAccuracy:{:.2f}'
                       .format(e, run_model.scheduler.get_lr(), avg_train_loss, train_accuracy, tst_accuracy))
 
-        tst_accuracy = run_model.test(load_best_model=True)
+            tst_accuracy = run_model.test(load_best_model=True)
+            write_summary.write_final_accuracy(tst_accuracy, 1, e)
         print('Final test accuracy on best model:{}'.format(tst_accuracy))
 
     else:

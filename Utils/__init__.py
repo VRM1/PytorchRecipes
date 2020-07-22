@@ -7,6 +7,8 @@ from sklearn.model_selection import train_test_split
 import spacy
 import gensim
 from .EarlyStopping import EarlyStopping
+from .SummaryWriter import LogSummary
+
 def tokenize_en(text):
     """
     Tokenizes English text from a string into a list of strings (tokens)

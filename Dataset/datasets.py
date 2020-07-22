@@ -7,11 +7,10 @@ from torch.utils.data import DataLoader
 import pandas as pd
 import pdb
 
-DATA_LOC = '/data/DataRepo/'
+DATA_LOC = '/home/vineeth/Documents/DataRepo/'
 
 # needs sklearn 0.23 +
-DATA_LUKUP = {'breast_cancer':load_breast_cancer(as_frame=True), 
-'covid19':'Covid19Classification/LitCovid_doc2vec_embeddings.json',
+DATA_LUKUP = {'covid19':'Covid19Classification/LitCovid_doc2vec_embeddings.json',
 "long_document":"LongDocumentClassification/LongDocumentDataset_doc2vec_embeddings.json"}
 
 class custom_data_loader(torch.utils.data.Dataset):
@@ -35,15 +34,16 @@ class custom_data_loader(torch.utils.data.Dataset):
 class DataRepo:
 
   def __call__(self, name, is_valid=False, train_batch_sz=256, test_batch_sz=512):
-    
-    data = pd.read_json(DATA_LOC+DATA_LUKUP[name], lines=True)
-    if isinstance(data, sklearn.utils.Bunch):
+
+    if name == 'breast_cancer':
+      data = load_breast_cancer()
       df = pd.DataFrame(data.data, columns=data.feature_names)
       df['label'] = pd.Series(data.target)
     else:
-      
+      data = pd.read_json(DATA_LOC+DATA_LUKUP[name], lines=True)
       df = pd.DataFrame(data["embedings"].to_list(), columns=['feature'+str(i) for i in range(len(data["embedings"].iloc[0]))])
       df['label'] = pd.Series(data.label)
+
     i_channel = 1
     n_classes = len(df['label'].unique())
     # if n_classes <= 2:
