@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args":["-d","long_document", "-v"]
+            "args":["-d","breast_cancer", "-v"]
         }
     ]
 }

@@ -6,6 +6,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import DataLoader
 import pandas as pd
 import pdb
+import os
 
 DATA_LOC = '/home/vineeth/Documents/DataRepo/'
 
@@ -16,19 +17,19 @@ DATA_LUKUP = {'covid19':'Covid19Classification/LitCovid_doc2vec_embeddings.json'
 class custom_data_loader(torch.utils.data.Dataset):
 
   def __init__(self, df):
-    self.x = df.loc[:, df.columns != 'label']
+    self.X = df.loc[:, df.columns != 'label']
     # if an unormalized dataset you need to normalize as follows
-    # self.X = (self.X-self.X.mean())/self.X.std()
-    self.x = torch.FloatTensor(self.x.values)
+    self.X = (self.X-self.X.mean())/self.X.std()
+    self.X = torch.FloatTensor(self.X.values)
     self.y = torch.LongTensor(df.label.values)
     # self.y = torch.FloatTensor(df.label.values)
-    self.shape = self.x.shape
+    self.shape = self.X.shape
   
   def __getitem__(self, idx):
-    return self.x[idx], self.y[idx]
+    return self.X[idx], self.y[idx]
   
   def __len__(self):
-    return len(self.x)
+    return len(self.X)
 
 
 class DataRepo:
@@ -51,7 +52,7 @@ class DataRepo:
     train_d = custom_data_loader(df)
     i_dim = train_d.shape[1]
     train_len = len(train_d)
-    split_t = int(np.floor(0.4 * train_len))
+    split_t = int(np.floor(0.2 * train_len))
     indices = range(train_len)
     if is_valid:
         split_v = int(np.floor(0.1 * train_len))

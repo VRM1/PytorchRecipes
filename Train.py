@@ -10,7 +10,7 @@ import torch.nn as nn
 from Model import Lenet300_100
 import os
 import numpy as np
-from torchsummary import summary
+from torchinfo import summary
 import GPUtil
 import torch as th
 from Dataset import DataRepo
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     write_summary = LogSummary(name=args.model + '_ba' + str(int(args.is_bayesian)) + '_' + args.dataset + '_' +
                                     str(args.b_sz) + '_' + str(args.epochs))
     if not args.test:
-        patience = 5
+        patience = 100
         start_epoch = 0
         if args.resume:
             start_epoch = run_model.start_epoch
