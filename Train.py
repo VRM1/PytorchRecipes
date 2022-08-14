@@ -3,7 +3,8 @@ This program trains the following self.models with Cifar-10 dataset: https://www
 
 1. Resnet-5
 '''
-import argparse
+import yaml
+from argparse import ArgumentParser, Namespace
 import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
@@ -18,6 +19,7 @@ from tqdm import tqdm
 from torch.utils.data.sampler import SubsetRandomSampler
 from Utils import EarlyStopping
 from Utils import LogSummary
+import yaml
 
 torch.manual_seed(33)
 np.random.seed(33)
@@ -28,6 +30,8 @@ if torch.cuda.is_available():
     th.cuda.set_device(AVAILABLE_GPU)
     print('Program will be executed on GPU:{}'.format(AVAILABLE_GPU))
     DEVICE = torch.device('cuda:' + str(AVAILABLE_GPU))
+elif torch.backends.mps.is_available():
+    DEVICE = 'mps'
 else:
     DEVICE = torch.device('cpu')
 
@@ -197,9 +201,9 @@ class RunModel:
                                  + net_typ + '-' + self.optim + '.pkl'
         return (self.model, self.train_weight_path)
 
+def _initialize_arguments(parser):
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('-config', help='configuration file *.yml', type=str, required=False, default='None')
     parser.add_argument('-m', '--model', help='model name 1.lenet300-100', default='lenet300-100')
     parser.add_argument('-test', '--test', help='if you want to run in test mode', action='store_true')
     parser.add_argument('-b', '--b_sz', help='batch size', default=256, type=int)
@@ -209,35 +213,54 @@ if __name__ == '__main__':
     parser.add_argument('-lr', '--learning_rate', help='learning rate', default=0.001, type=float)
     parser.add_argument('-op', '--optimizer', help='optimizer types, 1. SGD 2. Adam, default SGD', default='Adam')
     parser.add_argument('-ba', '--is_bayesian', help='to use bayesian layer or not', action='store_true')
-    parser.add_argument('-v', '--is_valid', help='whether to use validation or not', action='store_true')
+    parser.add_argument('-is_valid', help='user validation data or not: 1 or 0 respectively', type=int, default=0)
     parser.add_argument('-r', '--resume', help='if you want to resume from an epoch', action='store_true')
-
+    parser.add_argument('-patience', help='for early stopping. How many epochs to wait', \
+         default=10, type=int)
+    parser.add_argument('-report_test', help='if you want test the model at every training \
+         epoch (disabling this will reduce moel training time)', action='store_true')
     args = parser.parse_args()
+    if args.config != 'None':
+        opt = vars(args)
+        args = yaml.load(open(args.config), Loader=yaml.FullLoader)
+        opt.update(args)
+        args = Namespace(**opt)
+    return args
+
+if __name__ == '__main__':
+    parser = ArgumentParser(description='')
+    args = _initialize_arguments(parser)
+
+    
     run_model = RunModel(args)
     write_summary = LogSummary(name=args.model + '_ba' + str(int(args.is_bayesian)) + '_' + args.dataset + '_' +
                                     str(args.b_sz) + '_' + str(args.epochs))
     if not args.test:
-        patience = 100
         start_epoch = 0
         if args.resume:
             start_epoch = run_model.start_epoch
 
-        early_stopping = EarlyStopping(patience=patience, verbose=True, typ='loss')
+        early_stopping = EarlyStopping(patience=args.patience, verbose=True, typ='loss')
         for e in range(start_epoch, args.epochs):
             avg_train_loss, train_accuracy = run_model.train()
             if args.is_valid:
                 valid_accuracy = run_model.test(is_valid=True)
-
-            tst_accuracy = run_model.test()
+            if args.report_test:
+                tst_accuracy = run_model.test()
             model, path_to_write = run_model.getTrainedmodel()
             early_stopping(e, avg_train_loss, model, run_model.optimizer, path_to_write)
             if early_stopping.early_stop:
                 break
-            if args.is_valid:
+            if args.is_valid and args.report_test:
                 print(
                     'Epoch:{}, Lr:{} AvgTrainLoss:{:.3f}, TrainAccuracy:{:.2f}, ValidationAccuracy:{:.2f}, TestAccuracy:{:.2f}'
                     .format(e, run_model.scheduler.get_lr(), avg_train_loss, train_accuracy, valid_accuracy,
                             tst_accuracy))
+            elif args.is_valid:
+                    print('Epoch:{}, Lr:{} AvgTrainLoss:{:.3f}, TrainAccuracy:{:.2f}, \
+                         ValidationAccuracy:{:.2f}'.format(e, \
+                             run_model.scheduler.get_lr(), avg_train_loss, train_accuracy, \
+                                 valid_accuracy))
             else:
                 print('Epoch:{}, Lr:{}, AvgTrainLoss:{:.3f}, TrainAccuracy:{:.2f}, TestAccuracy:{:.2f}'
                       .format(e, run_model.scheduler.get_lr(), avg_train_loss, train_accuracy, tst_accuracy))
