@@ -4,3 +4,4 @@ b_sz: 256 # batch size
 dataset: breast_cancer # dataset
 is_valid : 1
 report_test: 0
+data_path: /Users/vineeth/Documents/DataRepo

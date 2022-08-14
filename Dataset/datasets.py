@@ -34,8 +34,10 @@ class custom_data_loader(torch.utils.data.Dataset):
 
 class DataRepo:
 
-  def __call__(self, name, is_valid=False, train_batch_sz=256, test_batch_sz=512):
+  def __call__(self, args, name, is_valid=False, train_batch_sz=256, test_batch_sz=512):
 
+    global DATA_LOC
+    DATA_LOC = args.data_path
     if name == 'breast_cancer':
       data = load_breast_cancer()
       df = pd.DataFrame(data.data, columns=data.feature_names)
