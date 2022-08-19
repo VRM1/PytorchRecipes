@@ -1,8 +1,6 @@
 import torch
 import numpy as np
 import pandas as pd
-from torchtext.data import TabularDataset
-from torchtext.data import Field, BucketIterator
 from sklearn.model_selection import train_test_split
 import spacy
 import gensim
@@ -29,29 +27,6 @@ def tokenize_fr(text):
 
 def SimpleTok(text):
     return text.split()
-
-def PrepTranslationData(pth):
-
-    batch_sz = 128
-    # create a field for source language
-    src_txt = Field(sequential=True, tokenize=SimpleTok, init_token = '<sos>', eos_token = '<eos>', lower=True)
-    dst_txt = Field(sequential=True, tokenize=SimpleTok, init_token = '<sos>', eos_token = '<eos>', lower=True)
-    d_format = [('src_l',src_txt),('tgt_l',dst_txt)]
-
-    trn,val,tst = TabularDataset.splits(path=pth,train='train.csv',validation='valid.csv',\
-                                        test='test.csv',format='csv',skip_header=True,fields=d_format)
-    # convert words to integers
-    dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print('building vocabulary')
-    # we pass in the same train data, but how come we are getting two different outputs (need to investigate this)
-    src_txt.build_vocab(trn,min_freq=2)
-    dst_txt.build_vocab(trn,min_freq=2)
-    train_iter = BucketIterator.splits((trn,), batch_size=batch_sz, device=dev)[0]
-    val_iter = BucketIterator.splits((val,), batch_size=batch_sz, device=dev)[0]
-    tst_iter = BucketIterator.splits((tst,), batch_size=batch_sz, device=dev)[0]
-    # train_iter, val_iter, tst_iter = BucketIterator.splits((trn, val, tst), batch_size=batch_sz,\
-    #                                 device=dev,repeat=False)
-    return(src_txt,dst_txt,train_iter,val_iter,tst_iter)
 
 # method to split the main data into train and test
 def SplitTrTest(pth,name):

@@ -8,7 +8,7 @@ from argparse import ArgumentParser, Namespace
 import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
-from Model import Lenet300_100
+from Model import SimpleLenet
 import os
 import numpy as np
 from torchinfo import summary
@@ -20,20 +20,21 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from Utils import EarlyStopping
 from Utils import LogSummary
 import yaml
+import pytorch_lightning as pl
 
 torch.manual_seed(33)
 np.random.seed(33)
 if torch.cuda.is_available():
     # check which gpu is free and assign that gpu
-    AVAILABLE_GPU = GPUtil.getAvailable(order='first', limit=1, maxLoad=0.5, \
-                                        maxMemory=0.5, includeNan=False, excludeID=[], excludeUUID=[])[0]
-    th.cuda.set_device(AVAILABLE_GPU)
-    print('Program will be executed on GPU:{}'.format(AVAILABLE_GPU))
-    DEVICE = torch.device('cuda:' + str(AVAILABLE_GPU))
+    # AVAILABLE_GPU = GPUtil.getAvailable(order='first', limit=1, maxLoad=0.5, \
+    #                                     maxMemory=0.5, includeNan=False, excludeID=[], excludeUUID=[])[0]
+    # th.cuda.set_device(AVAILABLE_GPU)
+    # print('Program will be executed on GPU:{}'.format(AVAILABLE_GPU))
+    DEVICE = 'gpu'
 elif torch.backends.mps.is_available():
-    DEVICE = torch.device('mps')
+    DEVICE = 'mps'
 else:
-    DEVICE = torch.device('cpu')
+    DEVICE = 'cpu'
 
 '''
 This program uses CIFAR10 data: https://www.cs.toronto.edu/~kriz/cifar.html for image classification using
@@ -77,31 +78,12 @@ class RunModel:
         else:
             self.criterion = nn.CrossEntropyLoss()
         self.init_model()
-        self.init_optimizer(self.lr)
 
-    def get_validation_data(self, is_valid):
-
-        indices = range(self.train_len)
-        split = int(np.floor(0.1 * self.train_len))
-        valid_indx = np.random.choice(indices, split)
-        train_indx = set(indices).difference(set(valid_indx))
-        train_sampler = SubsetRandomSampler(list(train_indx))
-        valid_sampler = SubsetRandomSampler(valid_indx)
-        self.train_loader = DataLoader(self.train_d, batch_size=self.tr_b_sz, sampler=train_sampler, num_workers=1)
-        self.valid_loader = DataLoader(self.train_d, batch_size=256, sampler=valid_sampler, num_workers=1)
 
     def init_model(self, load_weights=False, res_round=None):
 
         if self.m_name == 'lenet300-100':
-            self.model = Lenet300_100(self.i_dim, self.n_classes).to(DEVICE)
-            # torch.nn.DataParallel(self.model.features)
-            t_param = sum(p.numel() for p in self.model.parameters())
-
-        if self.resume:
-            self.__load_pre_train_model()
-        print(
-            'Running Mode:{}, #TrainingSamples:{}, #ValidationSamples:{}, #TestSamples:{}, #Parameters:{} ResumingFromEpoch:{}'
-            .format(self.m_name, self.train_len, self.valid_len, self.test_len, t_param, self.start_epoch))
+            self.model = SimpleLenet(self.i_dim, self.n_classes)
 
     def __load_pre_train_model(self):
 
@@ -118,13 +100,14 @@ class RunModel:
         self.start_epoch = state['epoch']
         # self.optimizer.load_state_dict(state['optimizer'])
 
-    def init_optimizer(self, l_rate=0.001):
-        if self.optim == 'SGD':
-            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=l_rate, momentum=0.9)
+    
+    def train_v2(self):
+        
+        if DEVICE == 'gpu':
+            trainer = pl.Trainer(accelerator=DEVICE)
         else:
-            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=l_rate)
-
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[100, 150, 200], gamma=0.1)
+            trainer = pl.Trainer(accelerator=DEVICE)
+        trainer.fit(model=self.model, train_dataloaders=self.train_loader)
 
     def train(self):
 
@@ -245,40 +228,5 @@ if __name__ == '__main__':
     run_model = RunModel(args)
     write_summary = LogSummary(name=args.model + '_ba' + str(int(args.is_bayesian)) + '_' + args.dataset + '_' +
                                     str(args.b_sz) + '_' + str(args.epochs))
-    if not args.test:
-        start_epoch = 0
-        if args.resume:
-            start_epoch = run_model.start_epoch
-
-        early_stopping = EarlyStopping(patience=args.patience, verbose=True, typ='loss')
-        for e in range(start_epoch, args.epochs):
-            avg_train_loss, train_accuracy = run_model.train()
-            if args.is_valid:
-                valid_accuracy = run_model.test(is_valid=True)
-            if args.report_test:
-                tst_accuracy = run_model.test()
-            model, path_to_write = run_model.getTrainedmodel()
-            early_stopping(e, avg_train_loss, model, run_model.optimizer, path_to_write)
-            if early_stopping.early_stop:
-                break
-            if args.is_valid and args.report_test:
-                print(
-                    'Epoch:{}, Lr:{} AvgTrainLoss:{:.3f}, TrainAccuracy:{:.2f}, ValidationAccuracy:{:.2f}, TestAccuracy:{:.2f}'
-                    .format(e, run_model.scheduler.get_lr(), avg_train_loss, train_accuracy, valid_accuracy,
-                            tst_accuracy))
-            elif args.is_valid:
-                    print('Epoch:{}, Lr:{} AvgTrainLoss:{:.3f}, TrainAccuracy:{:.2f}, \
-                         ValidationAccuracy:{:.2f}'.format(e, \
-                             run_model.scheduler.get_last_lr(), avg_train_loss, train_accuracy, \
-                                 valid_accuracy))
-            else:
-                print('Epoch:{}, Lr:{}, AvgTrainLoss:{:.3f}, TrainAccuracy:{:.2f}, TestAccuracy:{:.2f}'
-                      .format(e, run_model.scheduler.get_lr(), avg_train_loss, train_accuracy, tst_accuracy))
-
-        tst_accuracy = run_model.test(load_best_model=True)
-        write_summary.write_final_accuracy(tst_accuracy, 1, e)
-        print('Final test accuracy on best model:{}'.format(tst_accuracy))
-
-    else:
-        tst_accuracy = run_model.test()
-        print('Final test accuracy on best model:{:.3f}'.format(tst_accuracy))
+    
+    run_model.train_v2()
