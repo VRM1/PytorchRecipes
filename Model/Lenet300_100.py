@@ -40,7 +40,7 @@ class SimpleLenet(pl.LightningModule):
         x, y = batch
         x = x.view(x.size(0), -1)
         out = self.dense(x)
-        loss = nn.CrossEntropyLoss()
+        loss = nn.CrossEntropyLoss(out, y)
         return loss
 
     def configure_optimizers(self):
