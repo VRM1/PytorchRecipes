@@ -7,12 +7,14 @@ from torch.utils.data import DataLoader
 import pandas as pd
 import pdb
 import os
+import pathlib
 
 DATA_LOC = '/home/vineeth/Documents/DataRepo/'
 
 # needs sklearn 0.23 +
 DATA_LUKUP = {'covid19':'Covid19Classification/LitCovid_doc2vec_embeddings.json',
-"long_document":"LongDocumentClassification/LongDocumentDataset_doc2vec_embeddings.json"}
+"long_document":"LongDocumentClassification/LongDocumentDataset_doc2vec_embeddings.json",
+}
 
 class custom_data_loader(torch.utils.data.Dataset):
 
@@ -43,9 +45,17 @@ class DataRepo:
       df = pd.DataFrame(data.data, columns=data.feature_names)
       df['label'] = pd.Series(data.target)
     else:
-      data = pd.read_json(DATA_LOC+DATA_LUKUP[name], lines=True)
-      df = pd.DataFrame(data["embedings"].to_list(), columns=['feature'+str(i) for i in range(len(data["embedings"].iloc[0]))])
-      df['label'] = pd.Series(data.label)
+      extension = pathlib.Path(args.dataset).suffix
+      if extension == ".json":
+        data = pd.read_json(DATA_LOC+DATA_LUKUP[name], lines=True)
+        # df = pd.DataFrame(data["embedings"].to_list(), columns=['feature'+str(i) for i in range(len(data["embedings"].iloc[0]))])
+        # df['label'] = pd.Series(data.label)
+      elif extension == ".csv":
+        df = pd.read_csv(args.dataset)
+        if args.req_features:
+          df = df[pd.read_csv(args.req_features).columns]
+          if args.label_clm:
+            df.rename(columns={args.label_clm:"label"}, inplace=True)
 
     i_channel = 1
     n_classes = len(df['label'].unique())

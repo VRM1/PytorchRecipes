@@ -6,30 +6,23 @@ This program trains the following self.models with Cifar-10 dataset: https://www
 import yaml
 from argparse import ArgumentParser, Namespace
 import torch
-from torch.utils.data import DataLoader
 import torch.nn as nn
 from Model import SimpleLenet
 import os
-import numpy as np
 from torchinfo import summary
-import GPUtil
-import torch as th
 from Dataset import DataRepo
 from tqdm import tqdm
-from torch.utils.data.sampler import SubsetRandomSampler
 from Utils import EarlyStopping
 from Utils import LogSummary
 import yaml
 import pytorch_lightning as pl
+from pytorch_lightning import seed_everything
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+import mlflow.pytorch
+from mlflow import MlflowClient
 
-torch.manual_seed(33)
-np.random.seed(33)
+
 if torch.cuda.is_available():
-    # check which gpu is free and assign that gpu
-    # AVAILABLE_GPU = GPUtil.getAvailable(order='first', limit=1, maxLoad=0.5, \
-    #                                     maxMemory=0.5, includeNan=False, excludeID=[], excludeUUID=[])[0]
-    # th.cuda.set_device(AVAILABLE_GPU)
-    # print('Program will be executed on GPU:{}'.format(AVAILABLE_GPU))
     DEVICE = 'gpu'
 elif torch.backends.mps.is_available():
     DEVICE = 'mps'
@@ -84,6 +77,18 @@ class RunModel:
 
         if self.m_name == 'lenet300-100':
             self.model = SimpleLenet(self.i_dim, self.n_classes)
+        
+        early_stop_callback = EarlyStopping(monitor="val_loss", \
+             min_delta=0.01, patience=3, verbose=False, mode="min")
+        
+        if DEVICE == 'gpu':
+            self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
+                 min_epochs=1, callbacks=[early_stop_callback])
+        else:
+            self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
+                 min_epochs=1, callbacks=[early_stop_callback])
+        # Auto log all MLflow entities
+        mlflow.pytorch.autolog()
 
     def __load_pre_train_model(self):
 
@@ -101,53 +106,19 @@ class RunModel:
         # self.optimizer.load_state_dict(state['optimizer'])
 
     
-    def train_v2(self):
+    def train(self, experiment_id):
         
-        if DEVICE == 'gpu':
-            trainer = pl.Trainer(accelerator=DEVICE)
-        else:
-            trainer = pl.Trainer(accelerator=DEVICE)
-        trainer.fit(model=self.model, train_dataloaders=self.train_loader)
-
-    def train(self):
-
-        train_loss = []
-        correct = 0
-        total = 0
-        self.model.train()
-        for batch_idx, (X, Y) in enumerate(tqdm(self.train_loader)):
-
-            X, Y = X.to(DEVICE), Y.to(DEVICE)
-            self.optimizer.zero_grad()
-            if self.is_bayesian:
-                loss = self.model.sample_elbo(inputs=X,
-                                              labels=Y,
-                                              criterion=self.criterion,
-                                              sample_nbr=self.n_samples,
-                                              complexity_cost_weight=1 / 50000)
+        with mlflow.start_run(experiment_id=experiment_id):
+            if args.ckpt_path != 'None':
+                self. trainer.fit(max_epochs=100, min_epochs=1, model=self.model, train_dataloaders=self.train_loader, \
+                        val_dataloaders=self.valid_loader, ckpt_path=args.ckpt_path)
             else:
-                outputs = self.model(X)
-                # loss = self.criterion(outputs.view(-1), Y)
-                loss = self.criterion(outputs, Y)
-            loss.backward()
-            self.optimizer.step()
-            # Decay Learning Rate
-            self.scheduler.step()
-            train_loss.append(loss.item())
-            if self.is_bayesian:
-                outputs = self.model(X)
+                self.trainer.fit(model=self.model, train_dataloaders=self.train_loader, \
+                    val_dataloaders=self.valid_loader)
+    
+    def test_v2(self, load_best_model=False):
 
-            if self.n_classes != 1:
-                _, predicted = outputs.max(1)
-            else:
-                outputs = torch.sigmoid(outputs.view(-1))
-                predicted = (outputs > 0.5).float()
-            total += Y.size(0)
-            correct += predicted.eq(Y).sum().item()
-
-        t_accuracy = (100. * correct / total)
-        avg_train_loss = np.average(train_loss)
-        return avg_train_loss, t_accuracy
+        self.trainer.test(self.model, dataloaders=self.test_loader)
 
     def test(self, is_valid=False, load_best_model=False):
 
@@ -195,7 +166,7 @@ def _initialize_arguments(parser):
     parser.add_argument('-test', '--test', help='if you want to run in test mode', \
          action='store_true')
     parser.add_argument('-b', '--b_sz', help='batch size', default=256, type=int)
-    parser.add_argument('-d', '--dataset', help='datasets 1. breast_cancer 2. \
+    parser.add_argument('-dataset', help='datasets 1. breast_cancer 2. \
          covid19 3. long_document',default='breast_cancer')
     parser.add_argument('-data_path', help='the complete path of data', required=False)
     parser.add_argument('-e', '--epochs', help='number of epochs', default=150, type=int)
@@ -212,6 +183,11 @@ def _initialize_arguments(parser):
          default=10, type=int)
     parser.add_argument('-report_test', help='if you want test the model at every training \
          epoch (disabling this will reduce moel training time)', action='store_true')
+    parser.add_argument('-ckpt_path', help='Path to the checkpoint file, if you want \
+         to load the pre-trained state of the model', required=False, default='None', type=str)
+    parser.add_argument('-req_feattures', help='required features', required=False, type=str)
+    parser.add_argument('-target_label', help='name of the target feature column', \
+         required=False, type=str)
     args = parser.parse_args()
     if args.config != 'None':
         opt = vars(args)
@@ -221,6 +197,14 @@ def _initialize_arguments(parser):
     return args
 
 if __name__ == '__main__':
+    seed_everything(42)
+    client = MlflowClient()
+    try:
+        experiment_id = client.create_experiment("PytorchRun")
+    except:
+        experiment_id = client.get_experiment_by_name("PytorchRun").experiment_id
+    
+
     parser = ArgumentParser(description='')
     args = _initialize_arguments(parser)
 
@@ -229,4 +213,5 @@ if __name__ == '__main__':
     write_summary = LogSummary(name=args.model + '_ba' + str(int(args.is_bayesian)) + '_' + args.dataset + '_' +
                                     str(args.b_sz) + '_' + str(args.epochs))
     
-    run_model.train_v2()
+    run_model.train(experiment_id)
+    run_model.test_v2()
