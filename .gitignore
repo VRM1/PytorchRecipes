@@ -11,3 +11,4 @@ logs*
 lightning_logs*
 tmp*
 mlruns*
+*.ini
