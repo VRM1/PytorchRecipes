@@ -13,3 +13,6 @@ tmp*
 mlruns*
 *.ini
 *.vscode
+data*
+log*
+saved_models*
