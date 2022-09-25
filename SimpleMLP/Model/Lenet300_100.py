@@ -1,3 +1,4 @@
+from turtle import forward
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -41,7 +42,19 @@ class SimpleLenet(pl.LightningModule):
         super().__init__()
         self.dense = Dense2(in_features, out_features)
         self.acc = torchmetrics.Accuracy()
-        self.avg_prec = torchmetrics.AveragePrecision(num_classes=2)
+        self.auc_roc = torchmetrics.AUROC(num_classes=2)
+        self.auc_prec = torchmetrics.AveragePrecision(pos_label=1)
+    
+    def forward(self, batch):
+        x, y = batch
+        x = x.view(x.size(0), -1)
+        out = self.dense(x)
+        return (out, y)
+
+    def predict_step(self, batch, batch_idx):
+
+        return self(batch)
+
 
     def training_step(self, batch, batch_idx):
         # training_step defines the train loop.
@@ -62,8 +75,10 @@ class SimpleLenet(pl.LightningModule):
         preds = out.softmax(dim=-1)
         loss = loss(out, y)
         accuracy = self.acc(preds, y)
-        avg_precision = self.avg_prec(preds, y)
-        return {'test_loss':loss, 'test_accuracy':accuracy, 'test_avg_prec':avg_precision}
+        auc_precision = self.auc_prec(preds[:,1], y)
+        auc_roc = self.auc_roc(preds, y)
+        return {'test_loss':loss, 'test_accuracy':accuracy, \
+             'test_auc_prec':auc_precision, 'test_auc_roc':auc_roc}
     
     def validation_step(self, batch, batch_idx):
         # this is the validation loop
@@ -74,8 +89,10 @@ class SimpleLenet(pl.LightningModule):
         loss = loss(out, y)
         preds = out.softmax(dim=-1)
         accuracy = self.acc(preds, y)
-        avg_precision = self.avg_prec(preds, y)
-        return {'val_loss':loss, 'accuracy':accuracy, 'avg_prec':avg_precision}
+        auc_precision = self.auc_prec(preds[:,1], y)
+        auc_roc = self.auc_roc(preds, y)
+        return {'val_loss':loss, 'accuracy':accuracy, \
+             'auc_prec':auc_precision, 'auc_roc':auc_roc}
         # return loss
         
 
@@ -91,17 +108,20 @@ class SimpleLenet(pl.LightningModule):
     def validation_epoch_end(self, outputs):
         loss = sum(output['val_loss'] for output in outputs) / len(outputs)
         acc = sum(output['accuracy'] for output in outputs) / len(outputs)
-        avg_prec = sum(output['avg_prec'] for output in outputs) / len(outputs)
-        print ({'val_loss:':loss.item(), 'valid_acc:':acc.item(), 'valid_average_prec:':avg_prec.item()})
+        avg_auc_prec = sum(output['auc_prec'] for output in outputs) / len(outputs)
+        avg_auc_roc = sum(output['auc_roc'] for output in outputs) / len(outputs)
         self.log("val_loss", loss)
         self.log("valid_acc", acc)
-        self.log("avg_prec", avg_prec)
+        self.log("auc_prec", avg_auc_prec)
+        self.log("valid_auc_roc", avg_auc_roc)
     
     def test_epoch_end(self, outputs):
         loss = sum(output['test_loss'] for output in outputs) / len(outputs)
         acc = sum(output['test_accuracy'] for output in outputs) / len(outputs)
-        avg_prec = sum(output['test_avg_prec'] for output in outputs) / len(outputs)
+        auc_prec = sum(output['test_auc_prec'] for output in outputs) / len(outputs)
+        avg_auc_roc = sum(output['test_auc_roc'] for output in outputs) / len(outputs)
         self.log("test_loss", loss)
         self.log("test_acc", acc)
-        self.log("test_avg_prec", avg_prec)
+        self.log("test_auc_prec", auc_prec)
+        self.log("test_auc_roc", avg_auc_roc)
 

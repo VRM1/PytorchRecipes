@@ -1,22 +1,18 @@
-'''
-This program trains the following self.models with Cifar-10 dataset: https://www.cs.toronto.edu/~kriz/cifar.html
-
-1. Resnet-5
-'''
 import yaml
 from argparse import ArgumentParser, Namespace
 import torch
 import torch.nn as nn
 from Model import SimpleLenet
 import os
-from torchinfo import summary
 from Dataset import DataRepo
 from tqdm import tqdm
 from Utils import EarlyStopping
-from Utils import LogSummary
+# from Utils import LogSummary
 import yaml
 import pytorch_lightning as pl
 from pytorch_lightning import seed_everything
+from sklearn.metrics import classification_report
+from sklearn.metrics import average_precision_score, roc_auc_score
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import mlflow.pytorch
 from mlflow import MlflowClient
@@ -29,10 +25,6 @@ elif torch.backends.mps.is_available():
 else:
     DEVICE = 'cpu'
 
-'''
-This program uses CIFAR10 data: https://www.cs.toronto.edu/~kriz/cifar.html for image classification using
-several popular self.models based on convolution neural network.
-'''
 if not os.path.isdir('trained_weights'):
     os.makedirs('trained_weights')
 
@@ -66,6 +58,7 @@ class RunModel:
                  self.valid_loader, self.test_loader = \
                      data_repo(args, self.d_name, True, \
                          self.tr_b_sz, self.tst_b_sz)
+        
         if self.n_classes == 1:
             self.criterion = nn.BCEWithLogitsLoss()
         else:
@@ -116,35 +109,16 @@ class RunModel:
                 self.trainer.fit(model=self.model, train_dataloaders=self.train_loader, \
                     val_dataloaders=self.valid_loader)
     
-    def test_v2(self, load_best_model=False):
+    def test(self, load_best_model=False):
 
         self.trainer.test(self.model, dataloaders=self.test_loader)
-
-    def test(self, is_valid=False, load_best_model=False):
-
-        if load_best_model or self.test_mode:
-            self.__load_pre_train_model()
-        correct = 0
-        total = 0
-        if is_valid:
-            data = self.valid_loader
-        else:
-            data = self.test_loader
-        self.model.eval()
-        with torch.no_grad():
-            for batch_idx, (X, Y) in enumerate(tqdm(data)):
-                X, Y = X.to(DEVICE), Y.to(DEVICE)
-                outputs = self.model(X)
-
-                if self.n_classes != 1:
-                    _, predicted = outputs.max(1)
-                else:
-                    outputs = torch.sigmoid(outputs.view(-1))
-                    predicted = (outputs > 0.5).float()
-                total += Y.size(0)
-                correct += predicted.eq(Y).sum().item()
-        t_accuracy = (100. * correct / total)
-        return t_accuracy
+        preds  = self.trainer.predict(self.model, self.test_loader)
+        y = torch.concat([p[1] for p in preds]).numpy()
+        preds = torch.concat([p[0] for p in preds])
+        preds = torch.nn.functional.softmax(preds).numpy()
+        print(classification_report(y, preds.argmax(axis=1)))
+        print("ROC-AUC:{}".format(roc_auc_score(y, preds[:, 1])))
+        print("PrecisionRecall-AUC:{}".format(average_precision_score(y, preds[:, 1])))
 
     def getTrainedmodel(self):
         retrain = 100
@@ -185,7 +159,7 @@ def _initialize_arguments(parser):
          epoch (disabling this will reduce moel training time)', action='store_true')
     parser.add_argument('-ckpt_path', help='Path to the checkpoint file, if you want \
          to load the pre-trained state of the model', required=False, default='None', type=str)
-    parser.add_argument('-req_feattures', help='required features', required=False, type=str)
+    parser.add_argument('-req_features', help='required features', required=False, type=str)
     parser.add_argument('-target_label', help='name of the target feature column', \
          required=False, type=str)
     args = parser.parse_args()
@@ -210,8 +184,8 @@ if __name__ == '__main__':
 
     
     run_model = RunModel(args)
-    write_summary = LogSummary(name=args.model + '_ba' + str(int(args.is_bayesian)) + '_' + args.dataset + '_' +
-                                    str(args.b_sz) + '_' + str(args.epochs))
+    # write_summary = LogSummary(name=args.model + '_ba' + str(int(args.is_bayesian)) + '_' + args.dataset + '_' +
+    #                                 str(args.b_sz) + '_' + str(args.epochs))
     
     run_model.train(experiment_id)
-    run_model.test_v2()
+    run_model.test()

@@ -54,8 +54,8 @@ class DataRepo:
         df = pd.read_csv(args.dataset)
         if args.req_features:
           df = df[pd.read_csv(args.req_features).columns]
-          if args.label_clm:
-            df.rename(columns={args.label_clm:"label"}, inplace=True)
+        if args.label_clm:
+          df.rename(columns={args.label_clm:"label"}, inplace=True)
 
     i_channel = 1
     n_classes = len(df['label'].unique())
@@ -83,9 +83,10 @@ class DataRepo:
     valid_len = len(valid_indx)
     test_len = len(test_indx)
     assert train_len + valid_len + test_len == len(train_d)
+    test_loader = DataLoader(train_d, batch_size=test_batch_sz, sampler=test_sampler, num_workers=4)
     train_loader = DataLoader(train_d, batch_size=train_batch_sz, sampler=train_sampler, num_workers=4)
     valid_loader = DataLoader(train_d, batch_size=test_batch_sz, sampler=valid_sampler, num_workers=4)
-    test_loader = DataLoader(train_d, batch_size=test_batch_sz, sampler=test_sampler, num_workers=4)
+    # test_loader = DataLoader(train_d, batch_size=test_batch_sz, sampler=test_sampler, num_workers=4)
 
     return n_classes, i_channel, i_dim, train_len, valid_len, \
            test_len, train_loader, valid_loader, test_loader
