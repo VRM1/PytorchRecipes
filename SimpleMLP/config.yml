@@ -1,0 +1,11 @@
+patience: 10 # For early stopping. How many epochs to wait.
+epochs: 100 # number of epochs
+b_sz: 256 # batch size
+# dataset: /media/6TB_Volume/DataRepo/small_datasets/defaultCredit/data.csv # dataset
+is_valid : 1
+report_test: 0
+data_path: /Users/vineeth/Documents/DataRepo
+ckpt_path: None # if you want to load the model from a specific checkpoint, supply the path to the checkpoint file
+req_features: /media/6TB_Volume/DataRepo/small_datasets/defaultCredit/numerical_feats.csv # a csv file containing the required features
+target_label: default.payment.next.month #name of the target feature column
+label_clm: default.payment.next.month

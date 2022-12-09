@@ -7,12 +7,14 @@ from torch.utils.data import DataLoader
 import pandas as pd
 import pdb
 import os
+import pathlib
 
 DATA_LOC = '/home/vineeth/Documents/DataRepo/'
 
 # needs sklearn 0.23 +
 DATA_LUKUP = {'covid19':'Covid19Classification/LitCovid_doc2vec_embeddings.json',
-"long_document":"LongDocumentClassification/LongDocumentDataset_doc2vec_embeddings.json"}
+"long_document":"LongDocumentClassification/LongDocumentDataset_doc2vec_embeddings.json",
+}
 
 class custom_data_loader(torch.utils.data.Dataset):
 
@@ -43,9 +45,17 @@ class DataRepo:
       df = pd.DataFrame(data.data, columns=data.feature_names)
       df['label'] = pd.Series(data.target)
     else:
-      data = pd.read_json(DATA_LOC+DATA_LUKUP[name], lines=True)
-      df = pd.DataFrame(data["embedings"].to_list(), columns=['feature'+str(i) for i in range(len(data["embedings"].iloc[0]))])
-      df['label'] = pd.Series(data.label)
+      extension = pathlib.Path(args.dataset).suffix
+      if extension == ".json":
+        data = pd.read_json(DATA_LOC+DATA_LUKUP[name], lines=True)
+        # df = pd.DataFrame(data["embedings"].to_list(), columns=['feature'+str(i) for i in range(len(data["embedings"].iloc[0]))])
+        # df['label'] = pd.Series(data.label)
+      elif extension == ".csv":
+        df = pd.read_csv(args.dataset)
+        if args.req_features:
+          df = df[pd.read_csv(args.req_features).columns]
+        if args.label_clm:
+          df.rename(columns={args.label_clm:"label"}, inplace=True)
 
     i_channel = 1
     n_classes = len(df['label'].unique())
@@ -73,9 +83,10 @@ class DataRepo:
     valid_len = len(valid_indx)
     test_len = len(test_indx)
     assert train_len + valid_len + test_len == len(train_d)
+    test_loader = DataLoader(train_d, batch_size=test_batch_sz, sampler=test_sampler, num_workers=4)
     train_loader = DataLoader(train_d, batch_size=train_batch_sz, sampler=train_sampler, num_workers=4)
     valid_loader = DataLoader(train_d, batch_size=test_batch_sz, sampler=valid_sampler, num_workers=4)
-    test_loader = DataLoader(train_d, batch_size=test_batch_sz, sampler=test_sampler, num_workers=4)
+    # test_loader = DataLoader(train_d, batch_size=test_batch_sz, sampler=test_sampler, num_workers=4)
 
     return n_classes, i_channel, i_dim, train_len, valid_len, \
            test_len, train_loader, valid_loader, test_loader

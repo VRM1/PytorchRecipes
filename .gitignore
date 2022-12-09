@@ -8,3 +8,11 @@
 venv*
 .idea
 logs*
+lightning_logs*
+tmp*
+mlruns*
+*.ini
+*.vscode
+data*
+log*
+saved_models*
