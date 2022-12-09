@@ -1,7 +1,7 @@
 patience: 10 # For early stopping. How many epochs to wait.
 epochs: 100 # number of epochs
 b_sz: 256 # batch size
-dataset: /media/6TB_Volume/DataRepo/small_datasets/defaultCredit/data.csv # dataset
+# dataset: /media/6TB_Volume/DataRepo/small_datasets/defaultCredit/data.csv # dataset
 is_valid : 1
 report_test: 0
 data_path: /Users/vineeth/Documents/DataRepo

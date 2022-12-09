@@ -40,11 +40,15 @@ class Dense2(nn.Module):
 class SimpleLenet(pl.LightningModule):
     def __init__(self, in_features, out_features):
         super().__init__()
+        task_typ = 'binary'
+        if out_features > 2:
+            task_typ = 'multiclass'
         self.dense = Dense2(in_features, out_features)
-        self.acc = torchmetrics.Accuracy()
+        self.acc = torchmetrics.Accuracy(task=task_typ)
         self.auc_roc = torchmetrics.AUROC(num_classes=2)
         self.auc_prec = torchmetrics.AveragePrecision(pos_label=1)
-    
+                # task type of calculating accuracy
+        
     def forward(self, batch):
         x, y = batch
         x = x.view(x.size(0), -1)

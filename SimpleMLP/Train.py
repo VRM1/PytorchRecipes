@@ -33,6 +33,7 @@ class RunModel:
 
     def __init__(self, args):
 
+        self.args = args
         self.epochs = 150
         self.tr_b_sz = args.b_sz
         self.tst_b_sz = 512
@@ -72,7 +73,7 @@ class RunModel:
             self.model = SimpleLenet(self.i_dim, self.n_classes)
         
         early_stop_callback = EarlyStopping(monitor="val_loss", \
-             min_delta=0.01, patience=3, verbose=False, mode="min")
+             min_delta=0.01, patience=self.args.patience, verbose=False, mode="min")
         
         if DEVICE == 'gpu':
             self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
