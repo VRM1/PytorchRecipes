@@ -6,6 +6,7 @@ import spacy
 import gensim
 from .EarlyStopping import EarlyStopping
 from .SummaryWriter import LogSummary
+from .ArgumentParser import initialize_arguments
 
 def tokenize_en(text):
     """
