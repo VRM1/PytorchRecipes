@@ -7,6 +7,7 @@ import gensim
 from .EarlyStopping import EarlyStopping
 from .SummaryWriter import LogSummary
 from .ArgumentParser import initialize_arguments
+from .datasets import DataRepo
 
 def tokenize_en(text):
     """

@@ -1,10 +1,9 @@
 from argparse import ArgumentParser
 import torch
-from Utils import initialize_arguments
+from Utils import initialize_arguments, DataRepo
 import torch.nn as nn
 from Model import SimpleLenet
 import os
-from Dataset import DataRepo
 from Utils import EarlyStopping
 import pytorch_lightning as pl
 from pytorch_lightning import seed_everything
@@ -13,7 +12,7 @@ from sklearn.metrics import average_precision_score, roc_auc_score
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import mlflow.pytorch
 from mlflow import MlflowClient
-
+torch.manual_seed(112)
 
 if torch.cuda.is_available():
     DEVICE = 'gpu'
@@ -43,18 +42,18 @@ class RunModel:
             self.n_samples = 1
         self.optim = args.optimizer
         self.m_name = args.model
-        self.d_name = args.dataset
         self.lr = args.learning_rate
         self.resume = args.resume
         self.start_epoch = 0
         # path to write trained weights
-        self.train_weight_path = 'trained_weights/' + self.m_name + '-' + self.d_name + '-' + str(self.epochs) + \
-                                 '-' + str(self.tr_b_sz) + '.pth'
+        # self.train_weight_path = 'trained_weights/' + self.m_name + '-' + self.d_name + '-' + str(self.epochs) + \
+        #                          '-' + str(self.tr_b_sz) + '.pth'
+        self.train_weight_path = args.model_storage_path
         data_repo = DataRepo()
         self.n_classes, self.i_channel, self.i_dim, self.train_len, \
              self.valid_len, self.test_len, self.train_loader, \
                  self.valid_loader, self.test_loader = \
-                     data_repo(args, self.d_name, True, \
+                     data_repo(args, True, \
                          self.tr_b_sz, self.tst_b_sz)
         
         if self.n_classes == 1:

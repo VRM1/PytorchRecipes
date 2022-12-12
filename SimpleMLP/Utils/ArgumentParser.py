@@ -4,15 +4,19 @@ import yaml
 def initialize_arguments(parser):
 
     parser.add_argument('-config', help='configuration file *.yml', \
-         type=str, required=False, default='None')
+         type=str, required=True, default='None')
     parser.add_argument('-m', '--model', help='model name 1.lenet300-100', \
          default='lenet300-100')
     parser.add_argument('-test', '--test', help='if you want to run in test mode', \
          action='store_true')
     parser.add_argument('-b', '--b_sz', help='batch size', default=256, type=int)
-    parser.add_argument('-dataset', help='datasets 1. breast_cancer 2. \
-         covid19 3. long_document',default='breast_cancer')
-    parser.add_argument('-data_path', help='the complete path of data', required=False)
+    parser.add_argument('-train_path', help='the complete path of data', required=False)
+    parser.add_argument('-valid_path', help='the complete path of data', required=False)
+    parser.add_argument('-test_path', help='the complete path of data', required=False)
+    parser.add_argument('-train_size', help='the complete path of data', required=False)
+    parser.add_argument('-valid_size', help='the complete path of data', required=False)
+    parser.add_argument('-test_size', help='the complete path of data', required=False)
+    parser.add_argument('-model_storage_path', help='the complete path of data', required=False)
     parser.add_argument('-e', '--epochs', help='number of epochs', default=150, type=int)
     parser.add_argument('-lr', '--learning_rate', help='learning rate', default=0.001, type=float)
     parser.add_argument('-op', '--optimizer', help='optimizer types, 1. SGD 2. Adam, \
