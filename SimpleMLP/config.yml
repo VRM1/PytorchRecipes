@@ -1,11 +1,17 @@
-patience: 10 # For early stopping. How many epochs to wait.
+patience: 50 # For early stopping. How many epochs to wait.
 epochs: 100 # number of epochs
 b_sz: 256 # batch size
-# dataset: /media/6TB_Volume/DataRepo/small_datasets/defaultCredit/data.csv # dataset
 is_valid : 1
 report_test: 0
-data_path: /Users/vineeth/Documents/DataRepo
+train_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/defaultCredit/fold0/train/data.csv
+valid_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/defaultCredit/fold0/valid/data.csv
+test_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/defaultCredit/fold0/test/data.csv
+train_size: 15120 # size of training data
+valid_size: 1680 # size of validation data
+test_size: 7200 # size of test data
+n_classes: 2 # number of classes
 ckpt_path: None # if you want to load the model from a specific checkpoint, supply the path to the checkpoint file
-req_features: /media/6TB_Volume/DataRepo/small_datasets/defaultCredit/numerical_feats.csv # a csv file containing the required features
+req_features: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/defaultCredit/numerical_clms.csv # a csv file containing the required features
 target_label: default.payment.next.month #name of the target feature column
 label_clm: default.payment.next.month
+model_storage_path: trained_weights

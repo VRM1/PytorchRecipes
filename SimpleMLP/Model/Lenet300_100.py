@@ -51,7 +51,11 @@ class SimpleLenet(pl.LightningModule):
         
     def forward(self, batch):
         x, y = batch
-        x = x.view(x.size(0), -1)
+        y  = y.flatten()
+        if len(x.shape) == 3:
+            x = x.view(-1,x.shape[2])
+        else:
+            x = x.view(x.size(0), -1)
         out = self.dense(x)
         return (out, y)
 
@@ -63,7 +67,11 @@ class SimpleLenet(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         # training_step defines the train loop.
         x, y = batch
-        x = x.view(x.size(0), -1)
+        y = y.flatten()
+        if len(x.shape) == 3:
+            x = x.view(-1,x.shape[2])
+        else:
+            x = x.view(x.size(0), -1)
         out = self.dense(x)
         loss = nn.CrossEntropyLoss()
         loss = loss(out, y)
@@ -73,7 +81,11 @@ class SimpleLenet(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         # this is the test loop
         x, y = batch
-        x = x.view(x.size(0), -1)
+        y = y.flatten()
+        if len(x.shape) == 3:
+            x = x.view(-1,x.shape[2])
+        else:
+            x = x.view(x.size(0), -1)
         out = self.dense(x)
         loss = nn.CrossEntropyLoss()
         preds = out.softmax(dim=-1)
@@ -87,7 +99,11 @@ class SimpleLenet(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         # this is the validation loop
         x, y = batch
-        x = x.view(x.size(0), -1)
+        y = y.flatten()
+        if len(x.shape) == 3:
+            x = x.view(-1,x.shape[2])
+        else:
+            x = x.view(x.size(0), -1)
         out = self.dense(x)
         loss = nn.CrossEntropyLoss()
         loss = loss(out, y)
