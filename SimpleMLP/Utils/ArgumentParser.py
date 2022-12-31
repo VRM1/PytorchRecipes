@@ -13,9 +13,6 @@ def initialize_arguments(parser):
     parser.add_argument('-train_path', help='the complete path of data', required=False)
     parser.add_argument('-valid_path', help='the complete path of data', required=False)
     parser.add_argument('-test_path', help='the complete path of data', required=False)
-    parser.add_argument('-train_size', help='the complete path of data', required=False)
-    parser.add_argument('-valid_size', help='the complete path of data', required=False)
-    parser.add_argument('-test_size', help='the complete path of data', required=False)
     parser.add_argument('-model_storage_path', help='the complete path of data', required=False)
     parser.add_argument('-e', '--epochs', help='number of epochs', default=150, type=int)
     parser.add_argument('-lr', '--learning_rate', help='learning rate', default=0.001, type=float)
@@ -33,7 +30,8 @@ def initialize_arguments(parser):
          epoch (disabling this will reduce moel training time)', action='store_true')
     parser.add_argument('-ckpt_path', help='Path to the checkpoint file, if you want \
          to load the pre-trained state of the model', required=False, default='None', type=str)
-    parser.add_argument('-req_features', help='required features', required=False, type=str)
+    parser.add_argument('-num_features', help='required numerical features', required=False, type=str)
+    parser.add_argument('-cat_features', help='required categorical features', required=False, type=str)
     parser.add_argument('-target_label', help='name of the target feature column', \
          required=False, type=str)
     args = parser.parse_args()
