@@ -33,7 +33,8 @@ def initialize_arguments(parser):
          epoch (disabling this will reduce moel training time)', action='store_true')
     parser.add_argument('-ckpt_path', help='Path to the checkpoint file, if you want \
          to load the pre-trained state of the model', required=False, default='None', type=str)
-    parser.add_argument('-req_features', help='required features', required=False, type=str)
+    parser.add_argument('-num_features', help='required numerical features', required=False, type=str)
+    parser.add_argument('-cat_features', help='required categorical features', required=False, type=str)
     parser.add_argument('-target_label', help='name of the target feature column', \
          required=False, type=str)
     args = parser.parse_args()
