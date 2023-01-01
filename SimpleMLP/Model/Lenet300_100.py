@@ -4,59 +4,42 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 import torchmetrics
-
-# simple 2-layer dense network
-class Dense2(nn.Module):
-
-    def __init__(self,in_features, out_features,d_rate=0.2):
-
-        super().__init__()
-        # input dimension
-        self.i_dim = in_features
-        # output dimension
-        self.o_dim = out_features
-        # dropout rate
-        self.d_rate = d_rate
-        # define a fully connected layer
-        self.l1 = nn.Linear(self.i_dim ,300)
-        # define the dropout layer
-        self.l1_drop = nn.Dropout(d_rate)
-        # define a second FCN
-        self.l2 = nn.Linear(300,100)
-        # define the second dropout layer
-        self.l2_drop = nn.Dropout(d_rate)
-        # define the final prediction layer
-        self.ol = nn.Linear(100,self.o_dim)
-
-    def forward(self,x):
-
-        x = F.relu(self.l1(x))
-        x = self.l1_drop(x)
-        x = F.relu(self.l2(x))
-        x = self.l2_drop(x)
-        return self.ol(x)
+from .basic_layers import DenseTwoLayer, DenseTwoLayerCateg
 
 
 class SimpleLenet(pl.LightningModule):
-    def __init__(self, in_features, out_features):
+    def __init__(self, in_features, out_features, \
+         emb_size=None, cat_features=False):
         super().__init__()
         task_typ = 'binary'
         if out_features > 2:
             task_typ = 'multiclass'
-        self.dense = Dense2(in_features, out_features)
+        if cat_features:
+            n_cont, n_categ = in_features
+            self.dense = DenseTwoLayerCateg(in_features, out_features, emb_size, n_cont)
+        else:
+            self.dense = DenseTwoLayer(in_features, out_features)
         self.acc = torchmetrics.Accuracy(task=task_typ)
         self.auc_roc = torchmetrics.AUROC(num_classes=2)
         self.auc_prec = torchmetrics.AveragePrecision(pos_label=1)
                 # task type of calculating accuracy
         
     def forward(self, batch):
-        x, y = batch
-        y  = y.flatten()
-        if len(x.shape) == 3:
-            x = x.view(-1,x.shape[2])
+        if len(batch) > 2:
+            # we have a categorical feature
+            x_num, x_cat, y = batch
+            x_num = x_num.view(x_num.size(0), -1)
+            x_cat = x_cat.view(x_cat.size(0), -1)
+            y = y.flatten()
+            out = self.dense(x_num, x_cat)
         else:
-            x = x.view(x.size(0), -1)
-        out = self.dense(x)
+            x_num, y = batch
+            x_num = x_num.view(x_num.size(0), -1)
+            out = self.dense(x_num)
+        if len(x_num.shape) == 3:
+            # implemented to handle lazy data loader (not currently functional)
+            x_num = x_num.view(-1,x_num.shape[2])
+
         return (out, y)
 
     def predict_step(self, batch, batch_idx):
@@ -66,13 +49,20 @@ class SimpleLenet(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         # training_step defines the train loop.
-        x, y = batch
-        y = y.flatten()
-        if len(x.shape) == 3:
-            x = x.view(-1,x.shape[2])
+        if len(batch) > 2:
+            # we have a categorical feature
+            x_num, x_cat, y = batch
+            x_num = x_num.view(x_num.size(0), -1)
+            x_cat = x_cat.view(x_cat.size(0), -1)
+            y = y.flatten()
+            out = self.dense(x_num, x_cat)
         else:
-            x = x.view(x.size(0), -1)
-        out = self.dense(x)
+            x_num, y = batch
+            x_num = x_num.view(x_num.size(0), -1)
+            out = self.dense(x_num)
+        if len(x_num.shape) == 3:
+            # implemented to handle lazy data loader (not currently functional)
+            x_num = x_num.view(-1,x_num.shape[2])
         loss = nn.CrossEntropyLoss()
         loss = loss(out, y)
         accuracy = self.acc(out.softmax(dim=-1), y)
@@ -80,13 +70,21 @@ class SimpleLenet(pl.LightningModule):
     
     def test_step(self, batch, batch_idx):
         # this is the test loop
-        x, y = batch
-        y = y.flatten()
-        if len(x.shape) == 3:
-            x = x.view(-1,x.shape[2])
+        if len(batch) > 2:
+            # we have a categorical feature
+            x_num, x_cat, y = batch
+            x_num = x_num.view(x_num.size(0), -1)
+            x_cat = x_cat.view(x_cat.size(0), -1)
+            y = y.flatten()
+            out = self.dense(x_num, x_cat)
         else:
-            x = x.view(x.size(0), -1)
-        out = self.dense(x)
+            x_num, y = batch
+            x_num = x_num.view(x_num.size(0), -1)
+            out = self.dense(x_num)
+        if len(x_num.shape) == 3:
+            # implemented to handle lazy data loader (not currently functional)
+            x_num = x_num.view(-1,x_num.shape[2])
+
         loss = nn.CrossEntropyLoss()
         preds = out.softmax(dim=-1)
         loss = loss(out, y)
@@ -98,13 +96,21 @@ class SimpleLenet(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         # this is the validation loop
-        x, y = batch
-        y = y.flatten()
-        if len(x.shape) == 3:
-            x = x.view(-1,x.shape[2])
+        if len(batch) > 2:
+            # we have a categorical feature
+            x_num, x_cat, y = batch
+            x_num = x_num.view(x_num.size(0), -1)
+            x_cat = x_cat.view(x_cat.size(0), -1)
+            y = y.flatten()
+            out = self.dense(x_num, x_cat)
         else:
-            x = x.view(x.size(0), -1)
-        out = self.dense(x)
+            x_num, y = batch
+            x_num = x_num.view(x_num.size(0), -1)
+            out = self.dense(x_num)
+        if len(x_num.shape) == 3:
+            # implemented to handle lazy data loader (not currently functional)
+            x_num = x_num.view(-1,x_num.shape[2])
+            
         loss = nn.CrossEntropyLoss()
         loss = loss(out, y)
         preds = out.softmax(dim=-1)
