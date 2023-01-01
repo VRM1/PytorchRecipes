@@ -30,3 +30,5 @@ To prepare the data in a specific format, run `PrepareData.ipynb`.
 ### Categorical Columns
 
 ![alt text](images/table_example.png "Logo Title Text 1")
+
+The format is a pandas dataframe with the first row indicating the categorical column names and the second row should contain the *number of unique values* for each categorical feature.
