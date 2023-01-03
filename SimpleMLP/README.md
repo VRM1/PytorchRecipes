@@ -14,9 +14,9 @@ The following is an example of the `config.yml` file where all the arguments rel
     valid_path: <path_to_valid>
     test_path: <path_to_train>
     n_classes: 2 # number of classes
-    ckpt_path: None # if you want to load the model from a specific checkpoint, supply the path to the checkpoint file
-    num_features: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/bank/numerical_clms.csv # a csv file containing the required features
-    cat_features: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/bank/categorical_clms.csv # a csv file containing the required features
+    ckpt_path: <load the model from a specific checkpoint> (optional)
+    num_features: <csv_file_with_numerical_features>
+    cat_features: <csv_file_with_categorical_features>
     # label_clm: default.payment.next.month
     label_clm: y
     model_storage_path: trained_weights
@@ -31,4 +31,4 @@ To prepare the data in a specific format, run `PrepareData.ipynb`.
 
 ![alt text](images/table_example.png "Logo Title Text 1")
 
-The format is a pandas dataframe with the first row indicating the categorical column names and the second row should contain the *number of unique values* for each categorical feature.
+The format is a pandas dataframe with the first row indicating the categorical column names and the second row should contain the **number of unique values** for each categorical feature.
