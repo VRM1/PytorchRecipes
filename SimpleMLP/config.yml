@@ -3,13 +3,13 @@ epochs: 100 # number of epochs
 b_sz: 256 # batch size
 is_valid : 1
 report_test: 0
-train_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/defaultCredit/fold0/train/data.csv
-valid_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/defaultCredit/fold0/valid/data.csv
-test_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/defaultCredit/fold0/test/data.csv
+train_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/bank/fold0/train/data.csv
+valid_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/bank/fold0/valid/data.csv
+test_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/bank/fold0/test/data.csv
 n_classes: 2 # number of classes
 ckpt_path: None # if you want to load the model from a specific checkpoint, supply the path to the checkpoint file
-num_features: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/defaultCredit/numerical_clms.csv # a csv file containing the required features
-# cat_features: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/defaultCredit/categorical_clms.csv # a csv file containing the required features
-target_label: default.payment.next.month #name of the target feature column
-label_clm: default.payment.next.month
+num_features: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/bank/numerical_clms.csv # a csv file containing the required features
+cat_features: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/bank/categorical_clms.csv # a csv file containing the required features
+# label_clm: default.payment.next.month
+label_clm: y
 model_storage_path: trained_weights

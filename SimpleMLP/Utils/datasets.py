@@ -13,21 +13,26 @@ class CustomDataLoader(Dataset):
     def __init__(self, path, label_clm, num_features=None, cat_features=None):
         self.df = pd.read_csv(path)
         self.num_features, self.cat_features = None, None
-        self.x_numerical, self.x_categ = None, None
+        self.x_numerical, self.x_categ, \
+             self.__emb_siz = None, None, None
         if num_features:
           req_features = pd.read_csv(num_features).columns
           self.num_features = self.__get_clm_indices(req_features)
           self.x_numerical = torch.FloatTensor(self.df.iloc[:,self.num_features].values)
         if cat_features:
             req_features = pd.read_csv(cat_features).columns
+            num_categ = pd.read_csv(cat_features).values.flatten()
             self.cat_features = self.__get_clm_indices(req_features)
             self.x_categ = torch.LongTensor(self.df.iloc[:,self.cat_features].values)
+            self.__emb_siz = [(c, min(50, (c+1)//2)) for c in num_categ]
+
 
         self.label_clm = self.__get_clm_indices([label_clm])
         self.y = torch.LongTensor(self.df.iloc[:,self.label_clm].values).flatten()
     def __get_clm_indices(self, feat_list):
         header = [self.df.columns.get_loc(c) for c in feat_list]
         return header
+
     def __getitem__(self, index):
         
         if self.cat_features:
@@ -37,11 +42,14 @@ class CustomDataLoader(Dataset):
     @property
     def feature_size(self):
         if self.num_features and self.cat_features:
-            return len(self.num_features) + len(self.cat_features)
+            return (len(self.num_features), len(self.cat_features))
         elif self.num_features:
             return len(self.num_features)
         else:
             return len(self.cat_features)
+    @property
+    def emb_size(self):
+        return self.__emb_siz
 
     def __len__(self):
         return len(self.df)
@@ -64,13 +72,15 @@ class DataRepo:
     valid_loader = DataLoader(valid_d, batch_size=test_batch_sz, num_workers=1)
     test_loader = DataLoader(test_d, batch_size=test_batch_sz, num_workers=1)
     i_dim = train_d.feature_size
+    emb_size = train_d.emb_size
     train_len = len(train_d)
     valid_len = len(valid_d)
     test_len = len(test_d)
     i_channel = 1
     n_classes = args.n_classes
     
-    return n_classes, i_channel, i_dim, train_len, valid_len, \
+    # to do: modify the massive return statement to adhere to python3 standards
+    return n_classes, i_channel, i_dim, train_len, valid_len, emb_size, \
            test_len, train_loader, valid_loader, test_loader
 
 if __name__ == '__main__':

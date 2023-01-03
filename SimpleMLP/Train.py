@@ -51,7 +51,7 @@ class RunModel:
         self.train_weight_path = args.model_storage_path
         data_repo = DataRepo()
         self.n_classes, self.i_channel, self.i_dim, self.train_len, \
-             self.valid_len, self.test_len, self.train_loader, \
+             self.valid_len, self.emb_size, self.test_len, self.train_loader, \
                  self.valid_loader, self.test_loader = \
                      data_repo(args, True, \
                          self.tr_b_sz, self.tst_b_sz)
@@ -66,7 +66,8 @@ class RunModel:
     def init_model(self, load_weights=False, res_round=None):
 
         if self.m_name == 'lenet300-100':
-            self.model = SimpleLenet(self.i_dim, self.n_classes)
+            self.model = SimpleLenet(self.i_dim, self.n_classes, \
+                 self.emb_size, self.args.cat_features)
         
         early_stop_callback = EarlyStopping(monitor="val_loss", \
              min_delta=0.01, patience=self.args.patience, verbose=False, mode="min")
