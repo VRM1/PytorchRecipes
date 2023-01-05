@@ -12,17 +12,16 @@ class SimpleLenet(pl.LightningModule):
          emb_size=None, cat_features=False):
         super().__init__()
         task_typ = 'binary'
-        if out_features > 2:
+        if out_features >= 2:
             task_typ = 'multiclass'
         if cat_features:
             n_cont, n_categ = in_features
             self.dense = DenseTwoLayerCateg(in_features, out_features, emb_size, n_cont)
         else:
             self.dense = DenseTwoLayer(in_features, out_features)
-        self.acc = torchmetrics.Accuracy(task=task_typ)
-        self.auc_roc = torchmetrics.AUROC(num_classes=2)
-        self.auc_prec = torchmetrics.AveragePrecision(pos_label=1)
-                # task type of calculating accuracy
+        self.acc = torchmetrics.Accuracy(num_classes=2, task=task_typ)
+        self.auc_roc = torchmetrics.AUROC(num_classes=2, task=task_typ)
+        self.auc_prec = torchmetrics.AveragePrecision(num_classes=2, task=task_typ)
         
     def forward(self, batch):
         if len(batch) > 2:
@@ -89,7 +88,7 @@ class SimpleLenet(pl.LightningModule):
         preds = out.softmax(dim=-1)
         loss = loss(out, y)
         accuracy = self.acc(preds, y)
-        auc_precision = self.auc_prec(preds[:,1], y)
+        auc_precision = self.auc_prec(preds, y)
         auc_roc = self.auc_roc(preds, y)
         return {'test_loss':loss, 'test_accuracy':accuracy, \
              'test_auc_prec':auc_precision, 'test_auc_roc':auc_roc}
@@ -115,7 +114,7 @@ class SimpleLenet(pl.LightningModule):
         loss = loss(out, y)
         preds = out.softmax(dim=-1)
         accuracy = self.acc(preds, y)
-        auc_precision = self.auc_prec(preds[:,1], y)
+        auc_precision = self.auc_prec(preds, y)
         auc_roc = self.auc_roc(preds, y)
         return {'val_loss':loss, 'accuracy':accuracy, \
              'auc_prec':auc_precision, 'auc_roc':auc_roc}
