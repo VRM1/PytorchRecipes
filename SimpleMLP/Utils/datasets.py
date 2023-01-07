@@ -70,12 +70,12 @@ class DataRepo:
          args.label_clm, args.num_features, args.cat_features)
     train_loader = DataLoader(train_d, batch_size=train_batch_sz, num_workers=1)
     valid_loader = DataLoader(valid_d, batch_size=test_batch_sz, num_workers=1)
-    test_loader = DataLoader(test_d, batch_size=test_batch_sz, num_workers=1)
     i_dim = train_d.feature_size
     emb_size = train_d.emb_size
     train_len = len(train_d)
     valid_len = len(valid_d)
     test_len = len(test_d)
+    test_loader = DataLoader(test_d, batch_size=test_len, num_workers=1)
     i_channel = 1
     n_classes = args.n_classes
     

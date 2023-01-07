@@ -1,8 +1,9 @@
 patience: 50 # For early stopping. How many epochs to wait.
 epochs: 100 # number of epochs
-b_sz: 256 # batch size
-is_valid : 1
+b_sz: 8238 # batch size
+is_valid : 0
 report_test: 0
+inference_mode: True # If train mode, set as False, for test mode, set as True
 train_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/bank/fold0/train/data.csv
 valid_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/bank/fold0/valid/data.csv
 test_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/bank/fold0/test/data.csv
@@ -12,4 +13,4 @@ num_features: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Data
 cat_features: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/bank/categorical_clms.csv # a csv file containing the required features
 # label_clm: default.payment.next.month
 label_clm: y
-model_storage_path: trained_weights
+model_storage_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/trained_weights

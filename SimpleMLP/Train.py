@@ -45,10 +45,7 @@ class RunModel:
         self.lr = args.learning_rate
         self.resume = args.resume
         self.start_epoch = 0
-        # path to write trained weights
-        # self.train_weight_path = 'trained_weights/' + self.m_name + '-' + self.d_name + '-' + str(self.epochs) + \
-        #                          '-' + str(self.tr_b_sz) + '.pth'
-        self.train_weight_path = args.model_storage_path
+
         data_repo = DataRepo()
         self.n_classes, self.i_channel, self.i_dim, self.train_len, \
              self.valid_len, self.emb_size, self.test_len, self.train_loader, \
@@ -63,38 +60,27 @@ class RunModel:
         self.init_model()
 
 
-    def init_model(self, load_weights=False, res_round=None):
+    def init_model(self):
 
         if self.m_name == 'lenet300-100':
             self.model = SimpleLenet(self.i_dim, self.n_classes, \
                  self.emb_size, self.args.cat_features)
-        
+        if self.args.inference_mode:
+            self.model = self.model.load_from_checkpoint('lightning_logs/version_1/checkpoints/epoch=56-step=6612.ckpt')
         early_stop_callback = EarlyStopping(monitor="val_loss", \
              min_delta=0.01, patience=self.args.patience, verbose=False, mode="min")
         
         if DEVICE == 'gpu':
             self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
-                 min_epochs=1, callbacks=[early_stop_callback])
+                 min_epochs=1, callbacks=[early_stop_callback], \
+                     default_root_dir=self.args.model_storage_path)
         else:
             self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
                  min_epochs=1, callbacks=[early_stop_callback])
         # Auto log all MLflow entities
         mlflow.pytorch.autolog()
 
-    def __load_pre_train_model(self):
 
-        # get the name/path of the weight to be loaded
-        self.getTrainedmodel()
-        # load the weights
-        if DEVICE.type == 'cpu':
-            state = torch.load(self.train_weight_path, map_location=torch.device('cpu'))
-        else:
-            state = torch.load(self.train_weight_path)
-
-        self.init_optimizer(self.lr)
-        self.model.load_state_dict(state['weights'])
-        self.start_epoch = state['epoch']
-        # self.optimizer.load_state_dict(state['optimizer'])
 
     
     def train(self, experiment_id):
@@ -118,17 +104,6 @@ class RunModel:
         print("ROC-AUC:{}".format(roc_auc_score(y, preds[:, 1])))
         print("PrecisionRecall-AUC:{}".format(average_precision_score(y, preds[:, 1])))
 
-    def getTrainedmodel(self):
-        retrain = 100
-        if self.is_bayesian:
-            net_typ = '_is_bayesian_1'
-        else:
-            net_typ = '_is_bayesian_0'
-        self.train_weight_path = 'trained_weights/' + self.m_name + '-' + self.d_name \
-                                 + '-b' + str(self.tr_b_sz) + '-mcmc' + str(self.n_samples) + '-' \
-                                 + net_typ + '-' + self.optim + '.pkl'
-        return (self.model, self.train_weight_path)
-
 
 
 if __name__ == '__main__':
@@ -142,11 +117,8 @@ if __name__ == '__main__':
 
     parser = ArgumentParser(description='')
     args = initialize_arguments(parser)
-
-    
     run_model = RunModel(args)
-    # write_summary = LogSummary(name=args.model + '_ba' + str(int(args.is_bayesian)) + '_' + args.dataset + '_' +
-    #                                 str(args.b_sz) + '_' + str(args.epochs))
-    
-    run_model.train(experiment_id)
-    run_model.test()
+    if not args.inference_mode:
+        run_model.train(experiment_id)
+    else:
+        run_model.test()
