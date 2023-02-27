@@ -15,3 +15,5 @@ mlruns*
 *.vscode
 log*
 saved_models*
+trained_weights*
+config_files*
