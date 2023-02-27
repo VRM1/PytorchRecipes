@@ -66,7 +66,9 @@ class SimpleLenet(pl.LightningModule):
             x_num = x_num.view(-1,x_num.shape[2])
         loss = nn.CrossEntropyLoss()
         loss = loss(out, y)
-        accuracy = self.acc(out.softmax(dim=-1), y)
+        preds = out.softmax(dim=-1)
+        prob_ones = preds[:,1]
+        accuracy = self.acc(prob_ones, y)
         return {'loss':loss, 'accuracy':accuracy}
     
     def test_step(self, batch, batch_idx):
@@ -130,11 +132,7 @@ class SimpleLenet(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
     
-    # def training_epoch_end(self, outputs) -> None:
-    #     loss = sum(output['loss'] for output in outputs) / len(outputs)
-    #     acc = sum(output['accuracy'] for output in outputs) / len(outputs)
-    #     print ({'train_loss:':loss.item(), 'train_acc:':acc.item()})
-    
+
     def validation_epoch_end(self, outputs):
         loss = sum(output['val_loss'] for output in outputs) / len(outputs)
         acc = sum(output['accuracy'] for output in outputs) / len(outputs)
@@ -142,7 +140,7 @@ class SimpleLenet(pl.LightningModule):
         avg_auc_roc = sum(output['auc_roc'] for output in outputs) / len(outputs)
         self.log("val_loss", loss)
         self.log("valid_acc", acc)
-        self.log("auc_prec", avg_auc_prec)
+        self.log("valid_auc_prec", avg_auc_prec)
         self.log("valid_auc_roc", avg_auc_roc)
     
     def test_epoch_end(self, outputs):

@@ -9,9 +9,9 @@ import pytorch_lightning as pl
 from pytorch_lightning import seed_everything
 from sklearn.metrics import classification_report
 from sklearn.metrics import average_precision_score, roc_auc_score
+from pytorch_lightning import callbacks as pl_callbacks
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-import mlflow.pytorch
-from mlflow import MlflowClient
+import time
 torch.manual_seed(112)
 
 if torch.cuda.is_available():
@@ -45,13 +45,10 @@ class RunModel:
         self.lr = args.learning_rate
         self.resume = args.resume
         self.start_epoch = 0
-
+        self.n_classes = args.n_classes
         data_repo = DataRepo()
-        self.n_classes, self.i_channel, self.i_dim, self.train_len, \
-             self.valid_len, self.emb_size, self.test_len, self.train_loader, \
-                 self.valid_loader, self.test_loader = \
-                     data_repo(args, True, \
-                         self.tr_b_sz, self.tst_b_sz)
+        self.i_dim, self.emb_size, \
+            self.data_loader = data_repo(args)
         
         if self.n_classes == 1:
             self.criterion = nn.BCEWithLogitsLoss()
@@ -66,37 +63,34 @@ class RunModel:
             self.model = SimpleLenet(self.i_dim, self.n_classes, \
                  self.emb_size, self.args.cat_features)
         if self.args.inference_mode:
-            self.model = self.model.load_from_checkpoint('lightning_logs/version_1/checkpoints/epoch=56-step=6612.ckpt')
+            self.model = type(self.model).load_from_checkpoint('{}/best.ckpt'. \
+                format(self.args.model_storage_path))
         early_stop_callback = EarlyStopping(monitor="val_loss", \
              min_delta=0.01, patience=self.args.patience, verbose=False, mode="min")
-        
+        checkpoint_callback = pl_callbacks.ModelCheckpoint(dirpath=self.args.model_storage_path, filename='best', \
+            monitor='val_loss', save_last=True)
         if DEVICE == 'gpu':
             self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
-                 min_epochs=1, callbacks=[early_stop_callback], \
-                     default_root_dir=self.args.model_storage_path)
+                 min_epochs=1, callbacks=[early_stop_callback, checkpoint_callback])
         else:
             self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
-                 min_epochs=1, callbacks=[early_stop_callback])
-        # Auto log all MLflow entities
-        mlflow.pytorch.autolog()
-
-
+                 min_epochs=1, callbacks=[early_stop_callback, checkpoint_callback])
 
     
-    def train(self, experiment_id):
+    def train(self):
         
-        with mlflow.start_run(experiment_id=experiment_id):
-            if args.ckpt_path != 'None':
-                self. trainer.fit(max_epochs=100, min_epochs=1, model=self.model, train_dataloaders=self.train_loader, \
-                        val_dataloaders=self.valid_loader, ckpt_path=args.ckpt_path)
-            else:
-                self.trainer.fit(model=self.model, train_dataloaders=self.train_loader, \
-                    val_dataloaders=self.valid_loader)
+        if args.ckpt_path != 'None':
+            # self. trainer.fit(max_epochs=100, min_epochs=1, model=self.model, train_dataloaders=self.data, \
+            #         val_dataloaders=self.valid_loader, ckpt_path=args.ckpt_path)
+            self. trainer.fit(max_epochs=100, min_epochs=1, model=self.model, train_dataloaders=self.data_loader, \
+                    val_dataloaders=self.data_loader, ckpt_path=args.ckpt_path)
+        else:
+            self.trainer.fit(model=self.model, train_dataloaders=self.data_loader)
     
     def test(self, load_best_model=False):
 
-        self.trainer.test(self.model, dataloaders=self.test_loader)
-        preds  = self.trainer.predict(self.model, self.test_loader)
+        self.trainer.test(self.model, self.data_loader)
+        preds  = self.trainer.predict(self.model, self.data_loader)
         y = torch.concat([p[1] for p in preds]).numpy()
         preds = torch.concat([p[0] for p in preds])
         preds = torch.nn.functional.softmax(preds).numpy()
@@ -108,17 +102,12 @@ class RunModel:
 
 if __name__ == '__main__':
     seed_everything(42)
-    client = MlflowClient()
-    try:
-        experiment_id = client.create_experiment("PytorchRun")
-    except:
-        experiment_id = client.get_experiment_by_name("PytorchRun").experiment_id
-    
-
     parser = ArgumentParser(description='')
     args = initialize_arguments(parser)
     run_model = RunModel(args)
+    start_time = time.time()
     if not args.inference_mode:
-        run_model.train(experiment_id)
+        run_model.train()
     else:
         run_model.test()
+    print("--- %s seconds ---" % (time.time() - start_time))

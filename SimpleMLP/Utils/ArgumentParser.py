@@ -13,6 +13,7 @@ def initialize_arguments(parser):
      parser.add_argument('-train_path', help='the complete path of data', required=False)
      parser.add_argument('-valid_path', help='the complete path of data', required=False)
      parser.add_argument('-test_path', help='the complete path of data', required=False)
+     parser.add_argument('-extension', help='the type of file extension csv or parquet', required=False)
      parser.add_argument('-model_storage_path', help='the complete path of data', required=False)
      parser.add_argument('-e', '--epochs', help='number of epochs', default=150, type=int)
      parser.add_argument('-lr', '--learning_rate', help='learning rate', default=0.001, type=float)
