@@ -3,7 +3,7 @@ epochs: 100 # number of epochs
 b_sz: 512 # batch size
 is_valid : 0
 report_test: 0
-inference_mode: True # If train mode, set as False, for test mode, set as True
+inference_mode: False # If train mode, set as False, for test mode, set as True
 train_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/defaultCredit/fold0/train/ # can be a directory or a file
 valid_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/defaultCredit/fold0/valid/ # can be a directory or a file
 test_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/SimpleMLP/Dataset/defaultCredit/fold0/test/ # can be a directory or a file

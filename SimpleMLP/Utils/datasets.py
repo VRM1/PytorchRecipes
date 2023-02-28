@@ -1,7 +1,7 @@
 import torch
 import sklearn
 import numpy as np
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, ConcatDataset
 import pandas as pd
 from tqdm import tqdm
 from typing import List
@@ -50,8 +50,7 @@ class CustomFileLoader(Dataset):
             data = pd.read_parquet(self.files[index])
         else:
             data = pd.read_csv(self.files[index])
-        if index == 0:
-            self.process(data)
+        self.process(data)
         if self.num_feat_path:
             self.x_numerical = torch.FloatTensor(data.iloc[:,self.num_features].values)
         if self.categ_feat_path:
@@ -129,14 +128,14 @@ class MyDataModule(pl.LightningDataModule):
                         if f.endswith(self.extension)]
             v_files = [os.path.join(self.valid_dir, f) for f in listdir(self.valid_dir) \
                         if f.endswith(self.extension)]
-            flt = CustomFileLoader(t_files, self.extension, self.label_clm, \
-                 self.num_feat_path, self.cat_feat_path)
-            flv = CustomFileLoader(v_files, self.extension, self.label_clm, \
-                 self.num_feat_path, self.cat_feat_path)
-            # in the first loader the batch size will relate to the #files we read
-            self.train_file_loader = DataLoader(flt, batch_size=10, num_workers=4)
-            self.valid_file_loader = DataLoader(flv, batch_size=10, num_workers=4)
+            tfl = ConcatDataset([CustomFileLoader(t_files, self.extension, self.label_clm, \
+                 self.num_feat_path, self.cat_feat_path) for _ in range(len(t_files))])
             
+            vfl = ConcatDataset([CustomFileLoader(v_files, self.extension, self.label_clm, \
+                 self.num_feat_path, self.cat_feat_path)for _ in range(len(v_files))])
+            
+            self.train_file_loader = DataLoader(tfl, num_workers=4)
+            self.valid_file_loader = DataLoader(vfl, num_workers=4)
         if stage == 'test':
             te_files = [os.path.join(self.test_dir, f) for f in listdir(self.test_dir) \
                         if f.endswith(self.extension)]
@@ -149,14 +148,12 @@ class MyDataModule(pl.LightningDataModule):
         for f in self.train_file_loader:
             data_loader = DataLoader(CustomDataLoader(f), batch_size=self.batch_size, num_workers=6)
             return data_loader
-
     
     def val_dataloader(self):
 
         for f in self.valid_file_loader:
             data_loader = DataLoader(CustomDataLoader(f), batch_size=self.batch_size, num_workers=6)
             return data_loader
-
     
     def test_dataloader(self):
 
