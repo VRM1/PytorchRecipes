@@ -61,7 +61,7 @@ class RunModel:
 
         if self.m_name == 'lenet300-100':
             self.model = SimpleLenet(self.i_dim, self.n_classes, \
-                 self.emb_size, self.args.cat_features)
+                 self.emb_size, self.args.categ_feat_path)
         if self.args.inference_mode:
             self.model = type(self.model).load_from_checkpoint('{}/best.ckpt'. \
                 format(self.args.model_storage_path))
