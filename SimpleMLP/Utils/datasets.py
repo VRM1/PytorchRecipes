@@ -49,44 +49,27 @@ class CustomFileLoader(Dataset):
             # fill up with random value for categorical to avoid pytorch returning error due to None value
             data_obj['categorical_data'] = torch.empty(0)
             data_obj['label'] = self.y
-            return data_obj
-class LazyNumericalDataIterator:
-    def __init__(self, data, type):
-        self.data = data
-        self.type = type
-    def __iter__(self):
-        for d in self.data:
-            yield d[self.type]
-
-    def __len__(self):
-        return len(self.data)
-class LazyLabelDataIterator:
-    def __init__(self, data):
-        self.data = data
-    def __iter__(self):
-        for d in self.data:
-            yield d['label']
-
-    def __len__(self):
-        return len(self.data)
-    
+            return data_obj    
 class CustomDataLoader(Dataset):
     def __init__(self, data: List):
         
-        # unpack data
-        # data = list(data)
-        data_cat, data_label = tee(data), tee(data)
-        self.c_data = None
-        self.n_data = ConcatDataset(LazyNumericalDataIterator(data, 'numerical_data'))
-        # self.n_data = ConcatDataset([d['numerical_data'] \
-        #                               for d in data])
-        # if len(data[0]['categorical_data']):
-        #     self.c_data = ConcatDataset(LazyNumericalDataIterator(data, 'categorical_data'))
-            # self.c_data = ConcatDataset([d['categorical_data'] \
-            #                             for d in data])
-        # self.label = ConcatDataset([d['label'] \
-        #                               for d in data])
-        self.label = ConcatDataset(LazyLabelDataIterator(data_label))
+        #replicate iterators
+        data, data_copy = tee(data)
+        data_cat, data_label = tee(data_copy)
+        self.c_data = []
+  
+        self.n_data = ConcatDataset([d['numerical_data'] \
+                                      for d in data])
+        for d in data_cat:
+            if len(d['categorical_data']):
+                self.c_data.append(d['categorical_data'])
+            else:
+                self.c_data = None
+                break
+        if self.c_data is not None:
+            self.c_data = ConcatDataset(self.c_data)
+        self.label = ConcatDataset([d['label'] \
+                                      for d in data_label])
 
     def __getitem__(self, index):
 
