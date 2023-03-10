@@ -5,8 +5,8 @@ def initialize_arguments(parser):
 
      parser.add_argument('-config', help='configuration file *.yml', \
           type=str, required=True, default='None')
-     parser.add_argument('-m', '--model', help='model name 1.lenet300-100', \
-          default='lenet300-100')
+     parser.add_argument('-m', '--model', help='model name 1.mlp, 2.tabmlp', \
+          default='mlp')
      parser.add_argument('-test', '--test', help='if you want to run in test mode', \
           action='store_true')
      parser.add_argument('-b', '--b_sz', help='batch size', default=256, type=int)

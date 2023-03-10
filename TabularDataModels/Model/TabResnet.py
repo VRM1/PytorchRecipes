@@ -1,80 +1,36 @@
 import torch
 import pytorch_lightning as pl
-from pytorch_widedeep.models import TabMlp
+from pytorch_widedeep.models import TabResnet
 from pytorch_widedeep.metrics import Accuracy
+import torchmetrics
+import torch.nn as nn
 
-# class FTTransformerModel(pl.LightningModule):
-#     def __init__(self, input_dim, output_dim, embeddings, cont_vars, **kwargs):
-#         super().__init__()
-        
-#         # Define the FTTransformer model
-#         self.model = FTTransformer(
-#             input_dim=input_dim,
-#             output_dim=output_dim,
-#             embeddings=embeddings,
-#             cont_embeddings=cont_vars,
-#             **kwargs
-#         )
-        
-#         # Define the loss function
-#         self.loss_fn = torch.nn.BCEWithLogitsLoss()
-        
-#         # Define the evaluation metric
-#         self.accuracy = Accuracy()
-
-#     def forward(self, x):
-#         return self.model(x)
-
-#     def training_step(self, batch, batch_idx):
-#         x, y = batch
-#         y_hat = self(x)
-#         loss = self.loss_fn(y_hat, y.unsqueeze(1).float())
-#         self.log('train_loss', loss, prog_bar=True)
-#         return loss
-
-#     def validation_step(self, batch, batch_idx):
-#         x, y = batch
-#         y_hat = self(x)
-#         loss = self.loss_fn(y_hat, y.unsqueeze(1).float())
-#         acc = self.accuracy(torch.sigmoid(y_hat), y.unsqueeze(1))
-#         self.log('val_loss', loss, prog_bar=True)
-#         self.log('val_acc', acc, prog_bar=True)
-
-#     def configure_optimizers(self):
-#         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-#         return optimizer
-
-
-
-class SimpleLenet(pl.LightningModule):
-    def __init__(self, in_features, out_features, \
-         emb_size=None, cat_features=False):
+class TResnet(pl.LightningModule):
+    def __init__(self, column_indx, out_features, \
+                  cat_emb, continuous_cols):
         super().__init__()
         task_typ = 'binary'
         num_class = 1
         if out_features > 2:
             task_typ = 'multiclass'
-        if cat_features:
-            n_cont, n_categ = in_features
-            self.dense = DenseTwoLayerCateg(in_features, out_features, emb_size, n_cont)
+        if cat_emb:
             # Define the FTTransformer model
-            tab_mlp = TabMlp(
-                column_idx=tab_preprocessor.column_idx,
-                cat_embed_input=tab_preprocessor.cat_embed_input,
+            self.model = TabResnet(
+                column_idx=column_indx,
+                cat_embed_input=cat_emb,
                 continuous_cols=continuous_cols,
-                mlp_hidden_dims=[400, 200],
-                mlp_dropout=0.5,
-                mlp_activation="leaky_relu",
+                mlp_hidden_dims=[512, 256, 128],
+                mlp_dropout=0.2,
+                mlp_activation="relu",
                 embed_continuous=True,
                 mlp_batchnorm=True
             )
         else:
             # Define the FTTransformer model
-            tab_mlp = TabMlp(
-                column_idx=tab_preprocessor.column_idx,
-                cat_embed_input=tab_preprocessor.cat_embed_input,
+            self.model = TabResnet(
+                column_idx=column_indx,
                 continuous_cols=continuous_cols,
-                mlp_hidden_dims=[400, 200],
+                mlp_hidden_dims=[512, 256, 128],
                 mlp_dropout=0.5,
                 mlp_activation="leaky_relu",
                 embed_continuous=True,
@@ -90,17 +46,15 @@ class SimpleLenet(pl.LightningModule):
         if len(batch) > 2:
             # we have a categorical feature
             x_num, x_cat, y = batch
+            x = torch.cat([x_num, x_cat], axis=1)
             x_num = x_num.view(x_num.size(0), -1)
             x_cat = x_cat.view(x_cat.size(0), -1)
             y = y.flatten()
-            out = self.dense(x_num, x_cat)
+            out = self.model(x)
         else:
             x_num, y = batch
             x_num = x_num.view(x_num.size(0), -1)
-            out = self.dense(x_num)
-        if len(x_num.shape) == 3:
-            # implemented to handle lazy data loader (not currently functional)
-            x_num = x_num.view(-1,x_num.shape[2])
+            out = self.model(x_num)
 
         return (out, y)
 
@@ -114,14 +68,15 @@ class SimpleLenet(pl.LightningModule):
         if len(batch) > 2:
             # we have a categorical feature
             x_num, x_cat, y = batch
+            x = torch.cat([x_num, x_cat], axis=1)
             x_num = x_num.view(x_num.size(0), -1)
             x_cat = x_cat.view(x_cat.size(0), -1)
             y = y.flatten()
-            out = self.dense(x_num, x_cat)
+            out = self.model(x)
         else:
             x_num, y = batch
             x_num = x_num.view(x_num.size(0), -1)
-            out = self.dense(x_num)
+            out = self.model(x_num)
         if len(x_num.shape) == 3:
             # implemented to handle lazy data loader (not currently functional)
             x_num = x_num.view(-1,x_num.shape[2])
@@ -137,14 +92,15 @@ class SimpleLenet(pl.LightningModule):
         if len(batch) > 2:
             # we have a categorical feature
             x_num, x_cat, y = batch
+            x = torch.cat([x_num, x_cat], axis=1)
             x_num = x_num.view(x_num.size(0), -1)
             x_cat = x_cat.view(x_cat.size(0), -1)
             y = y.flatten()
-            out = self.dense(x_num, x_cat)
+            out = self.model(x)
         else:
             x_num, y = batch
             x_num = x_num.view(x_num.size(0), -1)
-            out = self.dense(x_num)
+            out = self.model(x_num)
         if len(x_num.shape) == 3:
             # implemented to handle lazy data loader (not currently functional)
             x_num = x_num.view(-1,x_num.shape[2])
@@ -165,17 +121,15 @@ class SimpleLenet(pl.LightningModule):
         if len(batch) > 2:
             # we have a categorical feature
             x_num, x_cat, y = batch
+            x = torch.cat([x_num, x_cat], axis=1)
             x_num = x_num.view(x_num.size(0), -1)
             x_cat = x_cat.view(x_cat.size(0), -1)
             y = y.flatten()
-            out = self.dense(x_num, x_cat)
+            out = self.model(x)
         else:
             x_num, y = batch
             x_num = x_num.view(x_num.size(0), -1)
-            out = self.dense(x_num)
-        if len(x_num.shape) == 3:
-            # implemented to handle lazy data loader (not currently functional)
-            x_num = x_num.view(-1,x_num.shape[2])
+            out = self.model(x_num)
             
         loss = nn.CrossEntropyLoss()
         loss = loss(out, y)

@@ -1,9 +1,9 @@
-from argparse import ArgumentParser
 import torch
+import os
+from argparse import ArgumentParser
 from Utils import initialize_arguments, DataRepo
 import torch.nn as nn
-from Model import SimpleLenet
-import os
+from Model import SimpleLenet, TabMLP, TResnet, FTranformer
 from Utils import EarlyStopping
 import pytorch_lightning as pl
 from pytorch_lightning import seed_everything
@@ -12,6 +12,8 @@ from sklearn.metrics import average_precision_score, roc_auc_score
 from pytorch_lightning import callbacks as pl_callbacks
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import time
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 torch.manual_seed(112)
 
 if torch.cuda.is_available():
@@ -47,8 +49,7 @@ class RunModel:
         self.start_epoch = 0
         self.n_classes = args.n_classes
         data_repo = DataRepo()
-        self.i_dim, self.emb_size, \
-            self.data_loader = data_repo(args)
+        self.dl = data_repo(args)
         
         if self.n_classes == 1:
             self.criterion = nn.BCEWithLogitsLoss()
@@ -59,16 +60,26 @@ class RunModel:
 
     def init_model(self):
 
-        if self.m_name == 'lenet300-100':
-            self.model = SimpleLenet(self.i_dim, self.n_classes, \
-                 self.emb_size, self.args.categ_feat_path)
+        if self.m_name == 'mlp':
+            self.model = SimpleLenet(self.dl.input_dim, self.n_classes, \
+                 self.dl.emb_size, self.args.categ_feat_path)
+        elif self.m_name == 'tabmlp':
+            self.model = TabMLP(self.dl.clm_indx, self.n_classes, \
+                 self.dl.emb_size, self.dl.num_features)
+        elif self.m_name == 'ftransformer':
+            self.model = FTranformer(self.dl.clm_indx, self.n_classes, \
+                 self.dl.emb_size, self.dl.num_features)
+        elif self.m_name == 'tabresnet':
+            self.model = TResnet(self.dl.clm_indx, self.n_classes, \
+                 self.dl.emb_size, self.dl.num_features)
         if self.args.inference_mode:
-            self.model = type(self.model).load_from_checkpoint('{}/best.ckpt'. \
-                format(self.args.model_storage_path))
+            self.model = type(self.model).load_from_checkpoint('{}/{}/best.ckpt'. \
+                format(self.args.model_storage_path, self.args.model))
         early_stop_callback = EarlyStopping(monitor="val_loss", \
              min_delta=0.01, patience=self.args.patience, verbose=False, mode="min")
-        checkpoint_callback = pl_callbacks.ModelCheckpoint(dirpath=self.args.model_storage_path, filename='best', \
-            monitor='val_loss', save_last=True)
+        checkpoint_callback = pl_callbacks.ModelCheckpoint(dirpath='{}/{}'. \
+                                format(self.args.model_storage_path, self.args.model), \
+                                      filename='best', monitor='val_loss', save_last=True)
         if DEVICE == 'gpu':
             self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
                  min_epochs=1, callbacks=[early_stop_callback, checkpoint_callback])
@@ -82,15 +93,15 @@ class RunModel:
         if args.ckpt_path != 'None':
             # self. trainer.fit(max_epochs=100, min_epochs=1, model=self.model, train_dataloaders=self.data, \
             #         val_dataloaders=self.valid_loader, ckpt_path=args.ckpt_path)
-            self. trainer.fit(max_epochs=100, min_epochs=1, model=self.model, train_dataloaders=self.data_loader, \
-                    val_dataloaders=self.data_loader, ckpt_path=args.ckpt_path)
+            self.trainer.fit(max_epochs=100, min_epochs=1, model=self.model, train_dataloaders=self.dl, \
+                    val_dataloaders=self.dl, ckpt_path=args.ckpt_path)
         else:
-            self.trainer.fit(model=self.model, train_dataloaders=self.data_loader)
+            self.trainer.fit(model=self.model, train_dataloaders=self.dl)
     
     def test(self, load_best_model=False):
 
-        self.trainer.test(self.model, self.data_loader)
-        preds  = self.trainer.predict(self.model, self.data_loader)
+        self.trainer.test(self.model, self.dl)
+        preds  = self.trainer.predict(self.model, self.dl)
         y = torch.concat([p[1] for p in preds]).numpy()
         preds = torch.concat([p[0] for p in preds])
         preds = torch.nn.functional.softmax(preds).numpy()
