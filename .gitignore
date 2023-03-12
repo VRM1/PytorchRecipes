@@ -16,4 +16,3 @@ mlruns*
 log*
 saved_models*
 trained_weights*
-config_files*
