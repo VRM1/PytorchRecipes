@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 import torchmetrics
 
 # simple 2-layer dense network
-class DenseTwoLayerCateg(nn.Module):
+class DenseThreeLayerCateg(nn.Module):
 
     def __init__(self,in_features, out_features, embedding_sizes, n_cont, d_rate=0.3):
 
@@ -71,7 +71,7 @@ class DenseTwoLayerCateg(nn.Module):
     #     return self.ol(x)
 
 # simple 2-layer dense network with categorical embedding
-class DenseTwoLayer(nn.Module):
+class DenseThreeLayer(nn.Module):
 
     def __init__(self,in_features, out_features,d_rate=0.2):
 

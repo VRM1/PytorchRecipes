@@ -13,7 +13,8 @@ class TabMLP(pl.LightningModule):
         num_class = 1
         if out_features > 2:
             task_typ = 'multiclass'
-        if cat_emb[0]:
+        # check if categorical data was given by checking if embeddings exist.
+        if cat_emb[0][-1]:
             # Define the FTTransformer model
             self.model = TabMlp(
                 column_idx=column_indx,
@@ -153,18 +154,18 @@ class TabMLP(pl.LightningModule):
         acc = sum(output['accuracy'] for output in outputs) / len(outputs)
         avg_auc_prec = sum(output['auc_prec'] for output in outputs) / len(outputs)
         avg_auc_roc = sum(output['auc_roc'] for output in outputs) / len(outputs)
-        self.log("val_loss", loss)
-        self.log("valid_acc", acc)
-        self.log("valid_auc_prec", avg_auc_prec)
-        self.log("valid_auc_roc", avg_auc_roc)
+        self.log("val_loss", loss, sync_dist=True)
+        self.log("valid_acc", acc, sync_dist=True)
+        self.log("valid_auc_prec", avg_auc_prec, sync_dist=True)
+        self.log("valid_auc_roc", avg_auc_roc, sync_dist=True)
     
     def test_epoch_end(self, outputs):
         loss = sum(output['test_loss'] for output in outputs) / len(outputs)
         acc = sum(output['test_accuracy'] for output in outputs) / len(outputs)
         auc_prec = sum(output['test_auc_prec'] for output in outputs) / len(outputs)
         avg_auc_roc = sum(output['test_auc_roc'] for output in outputs) / len(outputs)
-        self.log("test_loss", loss)
-        self.log("test_acc", acc)
-        self.log("test_auc_prec", auc_prec)
-        self.log("test_auc_roc", avg_auc_roc)
+        self.log("test_loss", loss, sync_dist=True)
+        self.log("test_acc", acc, sync_dist=True)
+        self.log("test_auc_prec", auc_prec, sync_dist=True)
+        self.log("test_auc_roc", avg_auc_roc, sync_dist=True)
 

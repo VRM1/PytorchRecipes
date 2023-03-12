@@ -49,7 +49,6 @@ class CustomFileLoader(Dataset):
             data = pd.read_parquet(self.files[index])
         else:
             data = pd.read_csv(self.files[index])
-        
         if self.num_features:
             self.x_numerical = torch.FloatTensor(data[self.num_features].values)
         if self.cat_features:
@@ -191,8 +190,12 @@ class GenericDataModule(pl.LightningDataModule):
         self._emb_size: List(tuple(int, int)) = (0, 0)
         if args.num_feat_path is not None:
             self.num_features = list(pd.read_csv(args.num_feat_path).columns)
+            if self.label_clm in self.num_features:
+                self.num_features.remove(self.label_clm)
         if args.categ_feat_path is not None:
             self.cat_features = list(pd.read_csv(args.categ_feat_path).columns)
+            if self.label_clm in self.cat_features:
+                self.cat_features.remove(self.label_clm)
             
         self.read_files()
 
@@ -252,7 +255,7 @@ class GenericDataModule(pl.LightningDataModule):
                  self.num_features, self.cat_features), batch_size=self.file_batch_size, \
                       num_workers=4, collate_fn=collate_irregular_batch)
             
-        if stage == 'test':
+        else:
             
             self.test_file_loader = DataLoader(CustomFileLoader(self.te_files, self.extension, self.label_clm, \
                  self.num_features, self.cat_features), batch_size=self.file_batch_size, \

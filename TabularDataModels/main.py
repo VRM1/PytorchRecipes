@@ -81,12 +81,13 @@ class RunModel:
                                 format(self.args.model_storage_path, self.args.model), \
                                       filename='best', monitor='val_loss', save_last=True)
         if DEVICE == 'gpu':
-            self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
+            self.trainer = pl.Trainer(gpus=1, max_epochs=args.epochs, \
                  min_epochs=1, callbacks=[early_stop_callback, checkpoint_callback])
+            current_device = torch.cuda.current_device()
+            print(f"PyTorch Lightning is using GPU device {current_device}")
         else:
             self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
                  min_epochs=1, callbacks=[early_stop_callback, checkpoint_callback])
-
     
     def train(self):
         
@@ -100,7 +101,7 @@ class RunModel:
     
     def test(self, load_best_model=False):
 
-        self.trainer.test(self.model, self.dl)
+        # self.trainer.test(self.model, self.dl)
         preds  = self.trainer.predict(self.model, self.dl)
         y = torch.concat([p[1] for p in preds]).numpy()
         preds = torch.concat([p[0] for p in preds])

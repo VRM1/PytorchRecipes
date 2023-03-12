@@ -13,7 +13,7 @@ class TResnet(pl.LightningModule):
         num_class = 1
         if out_features > 2:
             task_typ = 'multiclass'
-        if cat_emb:
+        if cat_emb[0][-1]:
             # Define the FTTransformer model
             self.model = TabResnet(
                 column_idx=column_indx,
