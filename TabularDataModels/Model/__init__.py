@@ -1,4 +1,4 @@
-from .Lenet300_100 import SimpleLenet
+from .MLP import Mlp
 from .TabMLP import TabMLP
 from .TabResnet import TResnet
-from .FTTransformer import FTranformer
+from .FTTransformer import FTransformer

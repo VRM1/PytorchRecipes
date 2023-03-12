@@ -13,7 +13,7 @@ class TabMLP(pl.LightningModule):
         num_class = 1
         if out_features > 2:
             task_typ = 'multiclass'
-        if cat_emb:
+        if cat_emb[0]:
             # Define the FTTransformer model
             self.model = TabMlp(
                 column_idx=column_indx,

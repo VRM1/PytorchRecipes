@@ -5,7 +5,7 @@ from pytorch_widedeep.metrics import Accuracy
 import torchmetrics
 import torch.nn as nn
 
-class FTranformer(pl.LightningModule):
+class FTransformer(pl.LightningModule):
     def __init__(self, column_indx, out_features, \
                   cat_emb, continuous_cols):
         super().__init__()

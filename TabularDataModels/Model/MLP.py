@@ -7,19 +7,19 @@ import torchmetrics
 from .basic_layers import DenseTwoLayer, DenseTwoLayerCateg
 from Utils import FprRatio
 
-class SimpleLenet(pl.LightningModule):
+class Mlp(pl.LightningModule):
     def __init__(self, in_features, out_features, \
          emb_size=None, cat_features=False):
         super().__init__()
         task_typ = 'binary'
         num_class = 1
+        n_cont, n_categ = in_features
         if out_features > 2:
             task_typ = 'multiclass'
         if cat_features:
-            n_cont, n_categ = in_features
             self.dense = DenseTwoLayerCateg(in_features, out_features, emb_size, n_cont)
         else:
-            self.dense = DenseTwoLayer(in_features, out_features)
+            self.dense = DenseTwoLayer(n_cont, out_features)
         self.acc = torchmetrics.Accuracy(num_classes=num_class, task=task_typ)
         self.auc_roc = torchmetrics.AUROC(num_classes=num_class, task=task_typ)
         self.auc_prec = torchmetrics.AveragePrecision(num_classes=num_class, task=task_typ)

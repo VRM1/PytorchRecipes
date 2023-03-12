@@ -9,7 +9,9 @@ def initialize_arguments(parser):
           default='mlp')
      parser.add_argument('-test', '--test', help='if you want to run in test mode', \
           action='store_true')
-     parser.add_argument('-b', '--b_sz', help='batch size', default=256, type=int)
+     parser.add_argument('-fbs', '--file_b_sz', help='batch size for reading files', \
+                          default=1, type=int)
+     parser.add_argument('-bs', '--b_sz', help='batch size', default=256, type=int)
      parser.add_argument('-train_path', help='the complete path of data', required=False)
      parser.add_argument('-valid_path', help='the complete path of data', required=False)
      parser.add_argument('-test_path', help='the complete path of data', required=False)

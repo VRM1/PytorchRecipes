@@ -1,7 +1,8 @@
-model: tabmlp
+model: tabresnet
 patience: 15 # For early stopping. How many epochs to wait.
 epochs: 100 # number of epochs
 b_sz: 512 # batch size
+file_b_sz: 10 # batch size for reading file. Example, file_b_sz=10 means you will read 10 parquet/csv files at one go
 is_valid : 0
 report_test: 0
 inference_mode: True # If train mode, set as False, for test mode, set as True

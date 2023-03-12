@@ -3,7 +3,7 @@ import os
 from argparse import ArgumentParser
 from Utils import initialize_arguments, DataRepo
 import torch.nn as nn
-from Model import SimpleLenet, TabMLP, TResnet, FTranformer
+from Model import Mlp, TabMLP, TResnet, FTransformer
 from Utils import EarlyStopping
 import pytorch_lightning as pl
 from pytorch_lightning import seed_everything
@@ -61,13 +61,13 @@ class RunModel:
     def init_model(self):
 
         if self.m_name == 'mlp':
-            self.model = SimpleLenet(self.dl.input_dim, self.n_classes, \
+            self.model = Mlp(self.dl.input_dim, self.n_classes, \
                  self.dl.emb_size, self.args.categ_feat_path)
         elif self.m_name == 'tabmlp':
             self.model = TabMLP(self.dl.clm_indx, self.n_classes, \
                  self.dl.emb_size, self.dl.num_features)
-        elif self.m_name == 'ftransformer':
-            self.model = FTranformer(self.dl.clm_indx, self.n_classes, \
+        elif self.m_name == 'fttransformer':
+            self.model = FTransformer(self.dl.clm_indx, self.n_classes, \
                  self.dl.emb_size, self.dl.num_features)
         elif self.m_name == 'tabresnet':
             self.model = TResnet(self.dl.clm_indx, self.n_classes, \
