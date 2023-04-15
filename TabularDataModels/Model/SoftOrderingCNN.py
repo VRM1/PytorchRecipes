@@ -3,10 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 import torchmetrics
-from .basic_layers import ConvThreeLayerCateg, SoftOrdering1DCNN
+from .basic_layers import SoftOrdering1DCatCNN, SoftOrdering1DCNN
 from Utils import FprRatio
 
-class Conv(pl.LightningModule):
+class SoftOrdCNN(pl.LightningModule):
     def __init__(self, in_features, out_features, \
         emb_size=None, cat_features=False):
         super().__init__()
@@ -17,7 +17,10 @@ class Conv(pl.LightningModule):
         if out_features > 2:
             task_typ = 'multiclass'
         if cat_features:
-            self.model = ConvThreeLayerCateg(in_features, out_features, emb_size, n_cont)
+            self.model = SoftOrdering1DCatCNN(in_features, out_features, emb_size, n_cont)
+        else:
+            self.model = SoftOrdering1DCNN(in_features, out_features, n_cont)
+
 
         self.acc = torchmetrics.Accuracy(num_classes=num_class, task=task_typ)
         self.auc_roc = torchmetrics.AUROC(num_classes=num_class, task=task_typ)
