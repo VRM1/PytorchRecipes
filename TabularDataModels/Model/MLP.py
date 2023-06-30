@@ -3,14 +3,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 import torchmetrics
+from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS
 from .basic_layers import DenseThreeLayer, DenseThreeLayerCateg
-from Utils import FprRatio
-
+from Utils import CustomDataLoader
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+from tqdm.auto import tqdm
+import pdb
 class Mlp(pl.LightningModule):
-    def __init__(self, in_features, out_features, \
+    def __init__(self, in_features, out_features, file_loader, \
          emb_size=None, cat_features=False):
         super().__init__()
         task_typ = 'binary'
+        self.file_loader = file_loader
         num_class = 1
         n_cont, n_categ = in_features
         if out_features > 2:
@@ -46,47 +51,71 @@ class Mlp(pl.LightningModule):
 
         return self(batch)
 
-
     def training_step(self, batch, batch_idx):
-        # training_step defines the train loop.
-        if len(batch) > 2:
-            # we have a categorical feature
-            x_num, x_cat, y = batch
-            x_num = x_num.view(x_num.size(0), -1)
-            x_cat = x_cat.view(x_cat.size(0), -1)
-            y = y.flatten()
-            out = self.dense(x_num, x_cat)
-        else:
-            x_num, y = batch
-            x_num = x_num.view(x_num.size(0), -1)
-            out = self.dense(x_num)
-        if len(x_num.shape) == 3:
-            # implemented to handle lazy data loader (not currently functional)
-            x_num = x_num.view(-1,x_num.shape[2])
+        out, y = self(batch)
         loss = nn.CrossEntropyLoss()
         loss = loss(out, y)
         preds = out.softmax(dim=-1)
         prob_ones = preds[:,1]
         accuracy = self.acc(prob_ones, y)
-        return {'loss':loss, 'accuracy':accuracy}
+        # log the loss to the progress bar and the logger
+        return {'global_step':self.current_epoch, 'loss':loss, 'accuracy':accuracy}
+    
+    def validation_step(self, batch, batch_idx):
+        out, y = self(batch)
+        loss = nn.CrossEntropyLoss()
+        loss = loss(out, y)
+        preds = out.softmax(dim=-1)
+        prob_ones = preds[:,1]
+        accuracy = self.acc(prob_ones, y)
+        auc_precision = self.auc_prec(prob_ones, y)
+        auc_roc = self.auc_roc(prob_ones, y)
+        return {'val_loss':loss, 'accuracy':accuracy, \
+                'auc_prec':auc_precision, 'auc_roc':auc_roc}
+
+    def train_dataloader(self) -> TRAIN_DATALOADERS:
+        self.file_loader.setup('fit')
+        # return self.file_loader.train_dataloader()
+        tr_file_loader = self.file_loader.train_dataloader()
+        total_len = len(tr_file_loader)
+        def generator():
+            for epoch in range(10):
+                for i, d in tqdm(enumerate(tr_file_loader)):
+                    data_loader = DataLoader(CustomDataLoader(d), batch_size=5000,
+                                              num_workers=6, pin_memory=True, prefetch_factor=64)
+                    for batch in data_loader:
+                        yield batch
+        
+        progress_bar = tqdm(
+            generator(),
+            total=total_len,
+            desc="Training"
+        )
+        return progress_bar
+
+    def val_dataloader(self) -> EVAL_DATALOADERS:
+        
+        self.file_loader.setup('fit')
+        # return self.file_loader.val_dataloader()
+
+        val_file_loader = self.file_loader.val_dataloader()
+        total_len = len(val_file_loader)
+        def generator():
+            for epoch in range(10):
+                for i, d in tqdm(enumerate(val_file_loader)):
+                    data_loader = DataLoader(CustomDataLoader(d), batch_size=5000,
+                                              num_workers=6, pin_memory=True, prefetch_factor=64)
+                    for new_data in data_loader:
+                        yield new_data
+        progress_bar = tqdm(
+            generator(),
+            total=total_len,
+            desc='Validating'
+        )
+        return progress_bar
     
     def test_step(self, batch, batch_idx):
-        # this is the test loop
-        if len(batch) > 2:
-            # we have a categorical feature
-            x_num, x_cat, y = batch
-            x_num = x_num.view(x_num.size(0), -1)
-            x_cat = x_cat.view(x_cat.size(0), -1)
-            y = y.flatten()
-            out = self.dense(x_num, x_cat)
-        else:
-            x_num, y = batch
-            x_num = x_num.view(x_num.size(0), -1)
-            out = self.dense(x_num)
-        if len(x_num.shape) == 3:
-            # implemented to handle lazy data loader (not currently functional)
-            x_num = x_num.view(-1,x_num.shape[2])
-
+        out, y = self(batch)
         loss = nn.CrossEntropyLoss()
         preds = out.softmax(dim=-1)
         # get the probability of predicting +ve class
@@ -98,40 +127,19 @@ class Mlp(pl.LightningModule):
         return {'test_loss':loss, 'test_accuracy':accuracy, \
              'test_auc_prec':auc_precision, 'test_auc_roc':auc_roc}
     
-    def validation_step(self, batch, batch_idx):
-        # this is the validation loop
-        if len(batch) > 2:
-            # we have a categorical feature
-            x_num, x_cat, y = batch
-            x_num = x_num.view(x_num.size(0), -1)
-            x_cat = x_cat.view(x_cat.size(0), -1)
-            y = y.flatten()
-            out = self.dense(x_num, x_cat)
-        else:
-            x_num, y = batch
-            x_num = x_num.view(x_num.size(0), -1)
-            out = self.dense(x_num)
-        if len(x_num.shape) == 3:
-            # implemented to handle lazy data loader (not currently functional)
-            x_num = x_num.view(-1,x_num.shape[2])
-            
-        loss = nn.CrossEntropyLoss()
-        loss = loss(out, y)
-        preds = out.softmax(dim=-1)
-        prob_ones = preds[:,1]
-        accuracy = self.acc(prob_ones, y)
-        auc_precision = self.auc_prec(prob_ones, y)
-        auc_roc = self.auc_roc(prob_ones, y)
-        return {'val_loss':loss, 'accuracy':accuracy, \
-             'auc_prec':auc_precision, 'auc_roc':auc_roc}
-        # return loss
-        
+
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
     
+    def training_epoch_end(self, outputs) -> None:
+        loss = sum(output['loss'] for output in outputs) / len(outputs)
+        acc = sum(output['accuracy'] for output in outputs) / len(outputs)
+        self.log("train_loss", loss)
+        self.log("train_acc", acc)
 
+    
     def validation_epoch_end(self, outputs):
         loss = sum(output['val_loss'] for output in outputs) / len(outputs)
         acc = sum(output['accuracy'] for output in outputs) / len(outputs)

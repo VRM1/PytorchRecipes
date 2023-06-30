@@ -1,3 +1,6 @@
+import sys
+sys.path.append('/home/vineeth/Documents/GitWorkSpace/PytorchRecipes/')
+sys.path.append('/home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels')
 import torch
 import numpy as np
 import pandas as pd
@@ -7,7 +10,7 @@ import gensim
 from .EarlyStopping import EarlyStopping
 from .SummaryWriter import LogSummary
 from .ArgumentParser import initialize_arguments
-from .datasets import DataRepo
+from .DataLoader import DataRepo, CustomDataLoader
 from .CustomMetrics import FprRatio
 
 def tokenize_en(text):

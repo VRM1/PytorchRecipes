@@ -9,6 +9,10 @@ import os
 import sys
 from itertools import tee
 from typing import Dict, List
+from pytorch_lightning.callbacks import Callback
+from pytorch_lightning.utilities import rank_zero_info
+import pdb
+from tqdm.auto import tqdm
 
 '''
 CustomFileLoader (class): A custom dataset class used to load CSV or Parquet files,
@@ -78,23 +82,12 @@ Parameters:
 class CustomDataLoader(Dataset):
     def __init__(self, data: List):
         
-        #replicate iterators
-        data, data_copy = tee(data)
-        data_cat, data_label = tee(data_copy)
-        self.c_data = []
-  
-        self.n_data = ConcatDataset([d['numerical_data'] \
-                                      for d in data])
-        for d in data_cat:
-            if len(d['categorical_data']):
-                self.c_data.append(d['categorical_data'])
-            else:
-                self.c_data = None
-                break
-        if self.c_data is not None:
-            self.c_data = ConcatDataset(self.c_data)
-        self.label = ConcatDataset([d['label'] \
-                                      for d in data_label])
+        # data = next(data)
+        self.c_data = None
+        if len(data['categorical_data']):
+            self.c_data = data['categorical_data']
+        self.n_data = data['numerical_data']
+        self.label = data['label']
 
     def __getitem__(self, index):
 
@@ -173,7 +166,7 @@ Constructor Variables
         numerical representation.
 
 '''
-class GenericDataModule(pl.LightningDataModule):
+class GenericDataModule():
     def __init__(self, args):
         super().__init__()
         self.args = args
@@ -188,6 +181,10 @@ class GenericDataModule(pl.LightningDataModule):
         self.file_batch_size = args.file_b_sz
         self._input_dim: List(int, int) = (0, 0)
         self._emb_size: List(tuple(int, int)) = (0, 0)
+        self.super_buoy = False
+        self.valid_data_loader = None
+        self.train_data_loader = None
+        self.test_data_loader = None
         if args.num_feat_path is not None:
             self.num_features = list(pd.read_csv(args.num_feat_path).columns)
             if self.label_clm in self.num_features:
@@ -228,26 +225,10 @@ class GenericDataModule(pl.LightningDataModule):
         return self._emb_size
         
 
-    def _read_train_files(self):
-
-        for data in self.train_file_loader:
-            yield data
-    
-    def _read_valid_files(self):
-
-        for data in self.valid_file_loader:
-            yield data
-    
-    def _read_test_files(self):
-
-        for data in self.test_file_loader:
-            yield data
-
 
     def setup(self, stage=None):
 
         if stage == "fit":
-            
             self.train_file_loader = DataLoader(CustomFileLoader(self.t_files, self.extension, self.label_clm, \
                  self.num_features, self.cat_features), batch_size=self.file_batch_size, \
                       num_workers=4, collate_fn=collate_irregular_batch)
@@ -260,24 +241,50 @@ class GenericDataModule(pl.LightningDataModule):
             self.test_file_loader = DataLoader(CustomFileLoader(self.te_files, self.extension, self.label_clm, \
                  self.num_features, self.cat_features), batch_size=self.file_batch_size, \
                       num_workers=4, collate_fn=collate_irregular_batch)
+    
     def train_dataloader(self):
 
-        # data_list = self._read_train_files()
-
-        return DataLoader(CustomDataLoader(self.train_file_loader), \
-                           batch_size=self.batch_size, num_workers=6, prefetch_factor=64)
+        return self.train_file_loader
+    
+        # total_len = len(self.train_file_loader)
+        # def generator():
+        #     for i, d in tqdm(enumerate(self.valid_file_loader)):
+        #         data_loader = DataLoader(CustomDataLoader(d), \
+        #                             batch_size=10000, num_workers=6, pin_memory=True, prefetch_factor=64)
+        #         for new_data in data_loader:
+        #             yield new_data
+        
+        # progress_bar = tqdm(
+        #     generator(),
+        #     total=total_len,
+        #     desc='Training'
+        # )
+        # return progress_bar
 
     
     def val_dataloader(self):
 
-        # data_list = self._read_valid_files()
-        chk = DataLoader(CustomDataLoader(self.valid_file_loader), \
-                    batch_size=self.batch_size, num_workers=6, pin_memory=True, prefetch_factor=64)
-        return chk
+        return self.valid_file_loader
+
+        # total_len = len(self.valid_file_loader)
+        # def generator():
+        #     for i, d in tqdm(enumerate(self.valid_file_loader)):
+        #         data_loader = DataLoader(CustomDataLoader(d), \
+        #                             batch_size=10000, num_workers=6, pin_memory=True, prefetch_factor=64)
+        #         for new_data in data_loader:
+        #             yield new_data
+        
+        # progress_bar = tqdm(
+        #     generator(),
+        #     total=total_len,
+        #     desc='Validating'
+        # )
+        # return progress_bar
+        
     
     def test_dataloader(self):
 
-        # data_list = self._read_test_files()
+        
         return DataLoader(CustomDataLoader(self.test_file_loader), \
                     batch_size=self.batch_size, num_workers=6, pin_memory=True, prefetch_factor=64)
     
@@ -295,7 +302,7 @@ class WideNDeepDataLoader(GenericDataModule):
         super().__init__(args)
         self.args = args
         self._clm_indx: Dict = {}
-        self._emb_size: List(tuple(int, int)) = [(0,0)]
+        self._emb_size: List[tuple(int, int)] = [(0, 0)]
     
     @property
     def clm_indx(self):
