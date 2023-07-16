@@ -6,13 +6,13 @@ file_b_sz: 1 # batch size for reading file. Example, file_b_sz=10 means you will
 is_valid : 0
 report_test: 0
 inference_mode: False # If train mode, set as False, for test mode, set as True
-train_path: /media/6TB_Volume/DataRepo/LargeSyntheticData/train # can be a directory or a file
-valid_path: /media/6TB_Volume/DataRepo/LargeSyntheticData/valid # caan be a directory or a file
-test_path: /media/6TB_Volume/DataRepo/LargeSyntheticData/test # can be a directory or a file
+train_path: /mnt/MlDatasets/LargeSyntheticData/train # can be a directory or a file
+valid_path: /mnt/MlDatasets/LargeSyntheticData/valid # caan be a directory or a file
+test_path: /mnt/MlDatasets/LargeSyntheticDataa/test # can be a directory or a file
 extension: parquet # data type extension, supports csv and parquet (parquet yet to be implemented)
 n_classes: 2 # number of classes
 ckpt_path: None # if you want to load the model from a specific checkpoint, supply the path to the checkpoint file
-num_feat_path: /media/6TB_Volume/DataRepo/LargeSyntheticData/numerical_clms.csv # a csv file containing the required features
+num_feat_path: /mnt/MlDatasets/LargeSyntheticData/numerical_clms.csv # a csv file containing the required features
 # categ_feat_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/defaultCredit/categorical_clms.csv # a csv file containing the required features
 # label_clm: default.payment.next.month
 label_clm: label
