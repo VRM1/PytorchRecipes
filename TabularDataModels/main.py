@@ -97,8 +97,7 @@ class RunModel:
             print(f"PyTorch Lightning is using GPU device {current_device}")
         else:
             self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
-                                      min_epochs=1, log_epoch=True,
-                                      callbacks=[early_stop_callback, checkpoint_callback])
+                 min_epochs=1, callbacks=[early_stop_callback, checkpoint_callback])
 
     def train(self):
 

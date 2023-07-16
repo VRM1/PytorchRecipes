@@ -24,6 +24,9 @@ class Mlp(pl.LightningModule):
             self.dense = DenseThreeLayerCateg(in_features, out_features, emb_size, n_cont)
         else:
             self.dense = DenseThreeLayer(n_cont, out_features)
+        self.t_outputs = []
+        self.v_outputs = []
+        self.te_outputs = []
         self.acc = torchmetrics.Accuracy(num_classes=num_class, task=task_typ)
         self.auc_roc = torchmetrics.AUROC(num_classes=num_class, task=task_typ)
         self.auc_prec = torchmetrics.AveragePrecision(num_classes=num_class, task=task_typ)
@@ -59,7 +62,10 @@ class Mlp(pl.LightningModule):
         prob_ones = preds[:,1]
         accuracy = self.acc(prob_ones, y)
         # log the loss to the progress bar and the logger
-        return {'global_step':self.current_epoch, 'loss':loss, 'accuracy':accuracy}
+        metrics = {'global_step':self.current_epoch, 'loss':loss, \
+                    'accuracy':accuracy}
+        self.t_outputs.append(metrics)
+        return metrics
     
     def validation_step(self, batch, batch_idx):
         out, y = self(batch)
@@ -70,8 +76,10 @@ class Mlp(pl.LightningModule):
         accuracy = self.acc(prob_ones, y)
         auc_precision = self.auc_prec(prob_ones, y)
         auc_roc = self.auc_roc(prob_ones, y)
-        return {'val_loss':loss, 'accuracy':accuracy, \
+        metrics = {'val_loss':loss, 'accuracy':accuracy, \
                 'auc_prec':auc_precision, 'auc_roc':auc_roc}
+        self.v_outputs.append(metrics)
+        return metrics
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:
         self.file_loader.setup('fit')
@@ -121,11 +129,14 @@ class Mlp(pl.LightningModule):
         # get the probability of predicting +ve class
         prob_ones = preds[:,1]
         loss = loss(out, y)
+        self.test_step_outputs.append(loss)
         accuracy = self.acc(prob_ones, y)
         auc_precision = self.auc_prec(prob_ones, y)
         auc_roc = self.auc_roc(prob_ones, y)
-        return {'test_loss':loss, 'test_accuracy':accuracy, \
+        metric = {'test_loss':loss, 'test_accuracy':accuracy, \
              'test_auc_prec':auc_precision, 'test_auc_roc':auc_roc}
+        self.te_outputs.append(metric)
+        return metric
     
 
 
@@ -133,30 +144,33 @@ class Mlp(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
     
-    def training_epoch_end(self, outputs) -> None:
-        loss = sum(output['loss'] for output in outputs) / len(outputs)
-        acc = sum(output['accuracy'] for output in outputs) / len(outputs)
+    def on_training_epoch_end(self) -> None:
+
+        loss = sum(output['loss'] for output in self.t_outputs) / len(self.t_outputs)
+        acc = sum(output['accuracy'] for output in self.t_outputs) / len(self.t_outputs)
         self.log("train_loss", loss)
         self.log("train_acc", acc)
+        self.t_outputs.clear() # free memory
 
     
-    def validation_epoch_end(self, outputs):
-        loss = sum(output['val_loss'] for output in outputs) / len(outputs)
-        acc = sum(output['accuracy'] for output in outputs) / len(outputs)
-        avg_auc_prec = sum(output['auc_prec'] for output in outputs) / len(outputs)
-        avg_auc_roc = sum(output['auc_roc'] for output in outputs) / len(outputs)
+    def on_validation_epoch_end(self) -> None:
+        loss = sum(output['val_loss'] for output in self.v_outputs) / len(self.v_outputs)
+        acc = sum(output['accuracy'] for output in self.v_outputs) / len(self.v_outputs)
+        avg_auc_prec = sum(output['auc_prec'] for output in self.v_outputs) / len(self.v_outputs)
+        avg_auc_roc = sum(output['auc_roc'] for output in self.v_outputs) / len(self.v_outputs)
         self.log("val_loss", loss)
         self.log("valid_acc", acc)
         self.log("valid_auc_prec", avg_auc_prec)
         self.log("valid_auc_roc", avg_auc_roc)
+        self.v_outputs.clear() # free memory
     
-    def test_epoch_end(self, outputs):
-        loss = sum(output['test_loss'] for output in outputs) / len(outputs)
-        acc = sum(output['test_accuracy'] for output in outputs) / len(outputs)
-        auc_prec = sum(output['test_auc_prec'] for output in outputs) / len(outputs)
-        avg_auc_roc = sum(output['test_auc_roc'] for output in outputs) / len(outputs)
+    def on_test_epoch_end(self) -> None:
+        loss = sum(output['test_loss'] for output in self.te_outputs) / len(self.te_outputs)
+        acc = sum(output['test_accuracy'] for output in self.te_outputs) / len(self.te_outputs)
+        auc_prec = sum(output['test_auc_prec'] for output in self.te_outputs) / len(self.te_outputs)
+        avg_auc_roc = sum(output['test_auc_roc'] for output in self.te_outputs) / len(self.te_outputs)
         self.log("test_loss", loss)
         self.log("test_acc", acc)
         self.log("test_auc_prec", auc_prec)
         self.log("test_auc_roc", avg_auc_roc)
-
+        self.te_outputs.clear() # free memory
