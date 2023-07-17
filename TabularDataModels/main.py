@@ -34,7 +34,6 @@ class RunModel:
     def __init__(self, args):
 
         self.args = args
-        self.epochs = 150
         self.tr_b_sz = args.b_sz
         self.tst_b_sz = 512
         self.test_mode = args.test
@@ -62,7 +61,7 @@ class RunModel:
     def init_model(self):
 
         if self.m_name == 'mlp':
-            self.model = Mlp(self.dl.input_dim, self.n_classes, self.dl,
+            self.model = Mlp(args.epochs, self.dl.input_dim, self.n_classes, self.dl,
                              self.dl.emb_size, self.args.categ_feat_path)
         if self.m_name == 'cnn':
             self.model = Conv(self.dl.input_dim, self.n_classes,
@@ -88,9 +87,8 @@ class RunModel:
                                                            format(self.args.model_storage_path, self.args.model), \
                                                            filename='best', monitor='val_loss', save_last=True)
         if DEVICE == 'gpu':
-            # FileLoopCallback(["file1.parquet", "file2.parquet"])
-            # num_sanity_val_steps=0, \
-            self.trainer = pl.Trainer(gpus=1, max_epochs=args.epochs, \
+
+            self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
                                       min_epochs=1, num_sanity_val_steps=0,
                                       callbacks=[early_stop_callback, checkpoint_callback])
             current_device = torch.cuda.current_device()

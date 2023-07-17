@@ -11,10 +11,11 @@ from tqdm import tqdm
 from tqdm.auto import tqdm
 import pdb
 class Mlp(pl.LightningModule):
-    def __init__(self, in_features, out_features, file_loader, \
+    def __init__(self, epochs, in_features, out_features, file_loader, \
          emb_size=None, cat_features=False):
         super().__init__()
         task_typ = 'binary'
+        self.epochs = epochs
         self.file_loader = file_loader
         num_class = 1
         n_cont, n_categ = in_features
@@ -87,7 +88,7 @@ class Mlp(pl.LightningModule):
         tr_file_loader = self.file_loader.train_dataloader()
         total_len = len(tr_file_loader)
         def generator():
-            for epoch in range(10):
+            for epoch in range(self.epochs):
                 for i, d in tqdm(enumerate(tr_file_loader)):
                     data_loader = DataLoader(CustomDataLoader(d), batch_size=5000,
                                               num_workers=6, pin_memory=True, prefetch_factor=64)
@@ -109,7 +110,7 @@ class Mlp(pl.LightningModule):
         val_file_loader = self.file_loader.val_dataloader()
         total_len = len(val_file_loader)
         def generator():
-            for epoch in range(10):
+            for epoch in range(self.epochs):
                 for i, d in tqdm(enumerate(val_file_loader)):
                     data_loader = DataLoader(CustomDataLoader(d), batch_size=5000,
                                               num_workers=6, pin_memory=True, prefetch_factor=64)
