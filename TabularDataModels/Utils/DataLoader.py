@@ -245,42 +245,12 @@ class GenericDataModule():
     def train_dataloader(self):
 
         return self.train_file_loader
-    
-        # total_len = len(self.train_file_loader)
-        # def generator():
-        #     for i, d in tqdm(enumerate(self.valid_file_loader)):
-        #         data_loader = DataLoader(CustomDataLoader(d), \
-        #                             batch_size=10000, num_workers=6, pin_memory=True, prefetch_factor=64)
-        #         for new_data in data_loader:
-        #             yield new_data
-        
-        # progress_bar = tqdm(
-        #     generator(),
-        #     total=total_len,
-        #     desc='Training'
-        # )
-        # return progress_bar
 
     
     def val_dataloader(self):
 
         return self.valid_file_loader
 
-        # total_len = len(self.valid_file_loader)
-        # def generator():
-        #     for i, d in tqdm(enumerate(self.valid_file_loader)):
-        #         data_loader = DataLoader(CustomDataLoader(d), \
-        #                             batch_size=10000, num_workers=6, pin_memory=True, prefetch_factor=64)
-        #         for new_data in data_loader:
-        #             yield new_data
-        
-        # progress_bar = tqdm(
-        #     generator(),
-        #     total=total_len,
-        #     desc='Validating'
-        # )
-        # return progress_bar
-        
     
     def test_dataloader(self):
 

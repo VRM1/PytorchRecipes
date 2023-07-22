@@ -5,7 +5,7 @@ b_sz: 1024 # batch size
 file_b_sz: 1 # batch size for reading file. Example, file_b_sz=10 means you will read 10 parquet/csv files at one go
 is_valid : 0
 report_test: 0
-inference_mode: False # If train mode, set as False, for test mode, set as True
+inference_mode: True # If train mode, set as False, for test mode, set as True
 train_path: /media/6TB_Volume/DataRepo/LargeSyntheticData/train # can be a directory or a file
 valid_path: /media/6TB_Volume/DataRepo/LargeSyntheticData/valid # caan be a directory or a file
 test_path: /media/6TB_Volume/DataRepo/LargeSyntheticData/test # can be a directory or a file
