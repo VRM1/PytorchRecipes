@@ -123,6 +123,27 @@ class Mlp(pl.LightningModule):
         )
         return progress_bar
     
+    def predict_dataloader(self) -> EVAL_DATALOADERS:
+        
+        self.file_loader.setup('fit')
+        # return self.file_loader.val_dataloader()
+
+        val_file_loader = self.file_loader.predict_dataloader()
+        total_len = len(val_file_loader)
+        def generator():
+            for epoch in range(self.epochs):
+                for i, d in tqdm(enumerate(val_file_loader)):
+                    data_loader = DataLoader(CustomDataLoader(d), batch_size=5000,
+                                              num_workers=6, pin_memory=True, prefetch_factor=64)
+                    for new_data in data_loader:
+                        yield new_data
+        progress_bar = tqdm(
+            generator(),
+            total=total_len,
+            desc='Validating'
+        )
+        return progress_bar
+    
     def test_step(self, batch, batch_idx):
         out, y = self(batch)
         loss = nn.CrossEntropyLoss()

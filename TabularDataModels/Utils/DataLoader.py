@@ -260,9 +260,7 @@ class GenericDataModule():
     
     def predict_dataloader(self):
 
-        data_list = self._read_test_files()
-        return DataLoader(CustomDataLoader(data_list), \
-                    batch_size=self.batch_size, num_workers=6, pin_memory=True, prefetch_factor=64)
+        return self.test_file_loader
 
 
 
