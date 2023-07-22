@@ -109,7 +109,7 @@ class RunModel:
     def test(self, load_best_model=False):
 
         # self.trainer.test(self.model, self.dl)
-        preds = self.trainer.predict(self.model, self.dl)
+        preds = self.trainer.predict(self.model, datamodule=self.dl)
         y = torch.concat([p[1] for p in preds]).numpy()
         preds = torch.concat([p[0] for p in preds])
         preds = torch.nn.functional.softmax(preds).numpy()
