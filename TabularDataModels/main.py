@@ -82,7 +82,7 @@ class RunModel:
             self.model = type(self.model).load_from_checkpoint('{}/{}/best.ckpt'. \
                                                                format(self.args.model_storage_path, self.args.model))
         early_stop_callback = EarlyStopping(monitor="val_loss", \
-                                            min_delta=0.01, patience=self.args.patience, verbose=False, mode="min")
+                                            min_delta=0.01, patience=self.args.patience, verbose=True, mode="min")
         checkpoint_callback = pl_callbacks.ModelCheckpoint(dirpath='{}/{}'. \
                                                            format(self.args.model_storage_path, self.args.model), \
                                                            filename='best', monitor='val_loss', save_last=True)
@@ -109,7 +109,7 @@ class RunModel:
     def test(self, load_best_model=False):
 
         # self.trainer.test(self.model, self.dl)
-        preds = self.trainer.predict(self.model, self.dl)
+        preds = self.trainer.predict(self.model, datamodule=self.dl)
         y = torch.concat([p[1] for p in preds]).numpy()
         preds = torch.concat([p[0] for p in preds])
         preds = torch.nn.functional.softmax(preds).numpy()
