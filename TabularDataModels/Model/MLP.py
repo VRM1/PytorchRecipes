@@ -9,14 +9,17 @@ from Utils import CustomDataLoader
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from tqdm.auto import tqdm
+import math
 import pdb
 class Mlp(pl.LightningModule):
-    def __init__(self, epochs, in_features, out_features, file_loader, \
-         emb_size=None, cat_features=False):
+    def __init__(self, epochs, in_features, out_features, file_loader,
+                 batch_size, workers=1, emb_size=None, cat_features=False):
         super().__init__()
         task_typ = 'binary'
         self.epochs = epochs
         self.file_loader = file_loader
+        self.batch_size = batch_size
+        self.workers = workers
         num_class = 1
         n_cont, n_categ = in_features
         if out_features > 2:
@@ -28,7 +31,7 @@ class Mlp(pl.LightningModule):
         self.t_outputs = []
         self.v_outputs = []
         self.te_outputs = []
-        self.total_val_data = 0
+        self.t_len = 0
         self.acc = torchmetrics.Accuracy(num_classes=num_class, task=task_typ)
         self.auc_roc = torchmetrics.AUROC(num_classes=num_class, task=task_typ)
         self.auc_prec = torchmetrics.AveragePrecision(num_classes=num_class, task=task_typ)
@@ -57,7 +60,6 @@ class Mlp(pl.LightningModule):
         return self(batch)
 
     def training_step(self, batch, batch_idx):
-        
         out, y = self(batch)
         loss = nn.CrossEntropyLoss()
         loss = loss(out, y)
@@ -71,9 +73,7 @@ class Mlp(pl.LightningModule):
         return metrics
     
     def validation_step(self, batch, batch_idx):
-
         out, y = self(batch)
-        self.total_val_data += len(out)
         loss = nn.CrossEntropyLoss()
         loss = loss(out, y)
         preds = out.softmax(dim=-1)
@@ -86,52 +86,92 @@ class Mlp(pl.LightningModule):
         self.v_outputs.append(metrics)
         return metrics
     
+    def __get_batch_size(self, file_loader):
+            d = next(enumerate(file_loader))[1]
+            data_loader = DataLoader(CustomDataLoader(d), batch_size=self.batch_size)
+            return len(data_loader)
+            
     def train_dataloader(self) -> TRAIN_DATALOADERS:
         self.file_loader.setup('fit')
         # return self.file_loader.train_dataloader()
         tr_file_loader = self.file_loader.train_dataloader()
-        total_len = len(tr_file_loader)
-        pbar = tqdm(total=total_len)
-        # for e in range(self.epochs):
-        for i, d in tqdm(enumerate(tr_file_loader)):
-            data_loader = DataLoader(CustomDataLoader(d), batch_size=5000,
-                                        num_workers=6, pin_memory=True, prefetch_factor=64)
-            for batch in data_loader:
-                yield batch
-            pbar.update(1)
+        splits = self.__get_batch_size(tr_file_loader)
+        def generator():
+            for epoch in range(self.epochs):
+                for i, d in tqdm(enumerate(tr_file_loader)):
+                    data_loader = DataLoader(CustomDataLoader(d), batch_size=self.batch_size,
+                                                num_workers=self.workers, pin_memory=True,
+                                                  prefetch_factor=64)
+                    for batch in data_loader:
+                        self.t_len += batch[0].shape[0]
+                        yield batch
         
+        progress_bar = tqdm(
+            generator(),
+            total=len(tr_file_loader) * splits,
+            desc="Training"
+        )
+        return progress_bar
 
     def val_dataloader(self) -> EVAL_DATALOADERS:
         
         self.file_loader.setup('fit')
-        val_file_loader = self.file_loader.val_dataloader()
-        total_len = len(val_file_loader)
-        pbar = tqdm(total=total_len)
-        for i, d in tqdm(enumerate(val_file_loader)):
-            data_loader = DataLoader(CustomDataLoader(d), batch_size=5000,
-                                        num_workers=6, pin_memory=True, prefetch_factor=64)
-            for new_data in data_loader:
-                yield new_data
-            pbar.update(1)
-    
-    def predict_dataloader(self) -> EVAL_DATALOADERS:
-        
-        self.file_loader.setup('fit')
         # return self.file_loader.val_dataloader()
 
-        val_file_loader = self.file_loader.predict_dataloader()
-        total_len = len(val_file_loader)
+        val_file_loader = self.file_loader.val_dataloader()
+        splits = self.__get_batch_size(val_file_loader)
         def generator():
             for epoch in range(self.epochs):
                 for i, d in tqdm(enumerate(val_file_loader)):
-                    data_loader = DataLoader(CustomDataLoader(d), batch_size=5000,
-                                              num_workers=6, pin_memory=True, prefetch_factor=64)
+                    data_loader = DataLoader(CustomDataLoader(d), batch_size=self.batch_size,
+                                                num_workers=self.workers, pin_memory=True,
+                                                  prefetch_factor=64)
                     for new_data in data_loader:
                         yield new_data
         progress_bar = tqdm(
             generator(),
-            total=total_len,
+            total=len(val_file_loader) * splits,
             desc='Validating'
+        )
+        return progress_bar
+    
+    def predict_dataloader(self) -> EVAL_DATALOADERS:
+        
+        self.file_loader.setup('test')
+        t_file_loader = self.file_loader.predict_dataloader()
+        splits = self.__get_batch_size(t_file_loader)
+        def generator():
+            for epoch in range(self.epochs):
+                for i, d in tqdm(enumerate(t_file_loader)):
+                    data_loader = DataLoader(CustomDataLoader(d), batch_size=self.batch_size,
+                                              num_workers=self.workers, pin_memory=True,
+                                                prefetch_factor=64)
+                    for new_data in data_loader:
+                        yield new_data
+        progress_bar = tqdm(
+            generator(),
+            total=len(t_file_loader) * splits,
+            desc='Testing'
+        )
+        return progress_bar
+    
+    def test_dataloader(self) -> EVAL_DATALOADERS:
+    
+        self.file_loader.setup('test')
+        t_file_loader = self.file_loader.predict_dataloader()
+        splits = self.__get_batch_size(t_file_loader)
+        def generator():
+            for epoch in range(self.epochs):
+                for i, d in tqdm(enumerate(t_file_loader)):
+                    data_loader = DataLoader(CustomDataLoader(d), batch_size=self.batch_size,
+                                            num_workers=self.workers, pin_memory=True,
+                                                prefetch_factor=64)
+                    for new_data in data_loader:
+                        yield new_data
+        progress_bar = tqdm(
+            generator(),
+            total=len(t_file_loader) * splits,
+            desc='Testing'
         )
         return progress_bar
     
@@ -158,7 +198,7 @@ class Mlp(pl.LightningModule):
         return optimizer
     
     def on_training_epoch_end(self) -> None:
-
+        
         loss = sum(output['loss'] for output in self.t_outputs) / len(self.t_outputs)
         acc = sum(output['accuracy'] for output in self.t_outputs) / len(self.t_outputs)
         self.log("train_loss", loss)
@@ -167,7 +207,7 @@ class Mlp(pl.LightningModule):
 
     
     def on_validation_epoch_end(self) -> None:
-        print(f'Valid Data Length:{self.total_val_data}')
+        print(f'Total Train Len:{self.t_len}')
         loss = sum(output['val_loss'] for output in self.v_outputs) / len(self.v_outputs)
         acc = sum(output['accuracy'] for output in self.v_outputs) / len(self.v_outputs)
         avg_auc_prec = sum(output['auc_prec'] for output in self.v_outputs) / len(self.v_outputs)
@@ -176,7 +216,7 @@ class Mlp(pl.LightningModule):
         self.log("valid_acc", acc)
         self.log("valid_auc_prec", avg_auc_prec)
         self.log("valid_auc_roc", avg_auc_roc)
-        self.total_val_data = 0
+        self.t_len = 0
         self.v_outputs.clear() # free memory
     
     def on_test_epoch_end(self) -> None:

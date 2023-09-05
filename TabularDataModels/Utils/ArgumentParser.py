@@ -35,14 +35,31 @@ def initialize_arguments(parser):
           epoch (disabling this will reduce moel training time)', action='store_true')
      parser.add_argument('-ckpt_path', help='Path to the checkpoint file, if you want \
           to load the pre-trained state of the model', required=False, default='None', type=str)
-     parser.add_argument('-num_feat_path', help='required numerical features', required=False, type=str)
+     parser.add_argument('-num_feat_path', help='required numerical features', required=False, type=int)
+     parser.add_argument('-file_workers', help='# workers for reading files', required=False, 
+                         default=1, type=int)
+     parser.add_argument('-data_workers', help='# workers to for loading data', required=False, 
+                         default=4, type=int)
      parser.add_argument('-categ_feat_path', help='required categorical features', required=False, type=str)
      parser.add_argument('-target_label', help='name of the target feature column', \
           required=False, type=str)
      args = parser.parse_args()
+
      if args.config != 'None':
           opt = vars(args)
-          args = yaml.load(open(args.config), Loader=yaml.FullLoader)
-          opt.update(args)
+          yaml_content = yaml.load(open(args.config), Loader=yaml.FullLoader)
+
+          # Updated reading from the nested YAML structure
+          opt.update(yaml_content['model_parameters'])
+          opt.update(yaml_content['data_parameters'])
+          opt.update(yaml_content['execution_parameters'])
+          opt.update(yaml_content['performance_parameters'])
           args = Namespace(**opt)
      return args
+
+     # if args.config != 'None':
+     #      opt = vars(args)
+     #      args = yaml.load(open(args.config), Loader=yaml.FullLoader)
+     #      opt.update(args)
+     #      args = Namespace(**opt)
+     # return args

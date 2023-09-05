@@ -174,6 +174,7 @@ class GenericDataModule():
         self.valid_dir = args.valid_path
         self.test_dir = args.test_path
         self.extension = args.extension
+        self.file_workers = args.file_workers
         self.num_features: List(str) = None
         self.cat_features: List(str) = None
         self.label_clm = args.label_clm
@@ -181,7 +182,6 @@ class GenericDataModule():
         self.file_batch_size = args.file_b_sz
         self._input_dim: List(int, int) = (0, 0)
         self._emb_size: List(tuple(int, int)) = (0, 0)
-        self.super_buoy = False
         self.valid_data_loader = None
         self.train_data_loader = None
         self.test_data_loader = None
@@ -231,16 +231,16 @@ class GenericDataModule():
         if stage == "fit":
             self.train_file_loader = DataLoader(CustomFileLoader(self.t_files, self.extension, self.label_clm, \
                  self.num_features, self.cat_features), batch_size=self.file_batch_size, \
-                      num_workers=4, collate_fn=collate_irregular_batch)
+                      num_workers=self.file_workers, collate_fn=collate_irregular_batch)
             self.valid_file_loader = DataLoader(CustomFileLoader(self.v_files, self.extension, self.label_clm, \
                  self.num_features, self.cat_features), batch_size=self.file_batch_size, \
-                      num_workers=4, collate_fn=collate_irregular_batch)
+                      num_workers=self.file_workers, collate_fn=collate_irregular_batch)
             
         else:
             
             self.test_file_loader = DataLoader(CustomFileLoader(self.te_files, self.extension, self.label_clm, \
                  self.num_features, self.cat_features), batch_size=self.file_batch_size, \
-                      num_workers=4, collate_fn=collate_irregular_batch)
+                      num_workers=self.file_workers, collate_fn=collate_irregular_batch)
     
     def train_dataloader(self):
 

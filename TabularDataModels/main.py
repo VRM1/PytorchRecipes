@@ -49,6 +49,8 @@ class RunModel:
         self.resume = args.resume
         self.start_epoch = 0
         self.n_classes = args.n_classes
+        self.batch_size = args.b_sz
+        self.workers = args.data_workers
         data_repo = DataRepo()
         self.dl = data_repo(args)
 
@@ -61,12 +63,13 @@ class RunModel:
     def init_model(self):
 
         if self.m_name == 'mlp':
-            self.model = Mlp(args.epochs, self.dl.input_dim, self.n_classes, self.dl,
-                             self.dl.emb_size, self.args.categ_feat_path)
-        if self.m_name == 'cnn':
+            self.model = Mlp(args.epochs, self.dl.input_dim, self.n_classes,
+                             self.dl, self.batch_size, self.workers,
+                                 self.dl.emb_size, self.args.categ_feat_path)
+        elif self.m_name == 'cnn':
             self.model = Conv(self.dl.input_dim, self.n_classes,
                               self.dl.emb_size, self.args.categ_feat_path)
-        if self.m_name == 'soft_cnn':
+        elif self.m_name == 'soft_cnn':
             self.model = SoftOrdCNN(self.dl.input_dim, self.n_classes,
                                     self.dl.emb_size, self.args.categ_feat_path)
         elif self.m_name == 'tabmlp':
@@ -81,6 +84,8 @@ class RunModel:
         if self.args.inference_mode:
             self.model = type(self.model).load_from_checkpoint('{}/{}/best.ckpt'. \
                                                                format(self.args.model_storage_path, self.args.model))
+            # re-initialize the file loader
+            self.model.file_loader = self.dl
         early_stop_callback = EarlyStopping(monitor="val_loss", \
                                             min_delta=0.01, patience=self.args.patience, verbose=True, mode="min")
         checkpoint_callback = pl_callbacks.ModelCheckpoint(dirpath='{}/{}'. \
@@ -101,15 +106,16 @@ class RunModel:
 
         if args.ckpt_path != 'None':
 
-            self.trainer.fit(max_epochs=100, min_epochs=1, model=self.model, train_dataloaders=self.dl, \
-                             val_dataloaders=self.dl, ckpt_path=args.ckpt_path)
+            # need to modify this line to just selt.train.fit(model)
+            self.trainer.fit(model=self.model, ckpt_path=args.ckpt_path)
         else:
             self.trainer.fit(model=self.model)
 
     def test(self, load_best_model=False):
 
         # self.trainer.test(self.model, self.dl)
-        preds = self.trainer.predict(self.model, datamodule=self.dl)
+        
+        preds = self.trainer.predict(self.model)
         y = torch.concat([p[1] for p in preds]).numpy()
         preds = torch.concat([p[0] for p in preds])
         preds = torch.nn.functional.softmax(preds).numpy()
