@@ -5,6 +5,11 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 import torchmetrics
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
 # simple 2-layer dense network
 class DenseThreeLayerCateg(nn.Module):
 

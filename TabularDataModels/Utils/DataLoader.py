@@ -221,17 +221,19 @@ class GenericDataModule():
     def emb_size(self):
         if self.args.categ_feat_path:
             num_categ = pd.read_csv(self.args.categ_feat_path).values.flatten()
-            self._emb_size = [(c, min(50, (c+1)//2)) for c in num_categ]
+            # self._emb_size = [(c, min(50, (c+1)//2)) for c in num_categ]
+            self._emb_size = [(c, 32) for c in num_categ]
         return self._emb_size
         
 
 
     def setup(self, stage=None):
 
-        if stage == "fit":
+        if stage == "train":
             self.train_file_loader = DataLoader(CustomFileLoader(self.t_files, self.extension, self.label_clm, \
                  self.num_features, self.cat_features), batch_size=self.file_batch_size, \
                       num_workers=self.file_workers, collate_fn=collate_irregular_batch)
+        elif stage == 'validate':
             self.valid_file_loader = DataLoader(CustomFileLoader(self.v_files, self.extension, self.label_clm, \
                  self.num_features, self.cat_features), batch_size=self.file_batch_size, \
                       num_workers=self.file_workers, collate_fn=collate_irregular_batch)
@@ -250,14 +252,7 @@ class GenericDataModule():
     def val_dataloader(self):
 
         return self.valid_file_loader
-
-    
-    def test_dataloader(self):
-
         
-        return DataLoader(CustomDataLoader(self.test_file_loader), \
-                    batch_size=self.batch_size, num_workers=6, pin_memory=True, prefetch_factor=64)
-    
     def predict_dataloader(self):
 
         return self.test_file_loader

@@ -5,6 +5,40 @@ from pytorch_widedeep.metrics import Accuracy
 import torchmetrics
 import torch.nn as nn
 
+# class TabMLP(BaseLightningModule):
+    
+#     def __init__(self, column_indx, **kwargs):
+#         super(Mlp, self).__init__(column_indx, **kwargs)
+
+#     def create_model(self, n_cont, out_features, cat_features, emb_size):
+#         if cat_features:
+#             #Define the FTTransformer model
+#             model = TabMlp(
+#                 column_idx=column_indx,
+#                 cat_embed_input=cat_emb,
+#                 continuous_cols=continuous_cols,
+#                 mlp_hidden_dims=[512, 256, 128],
+#                 mlp_dropout=0.2,
+#                 mlp_activation="relu",
+#                 embed_continuous=True,
+#                 mlp_batchnorm=True
+#             )
+#         else:
+#             model = TabMlp(
+#                 column_idx=column_indx,
+#                 continuous_cols=continuous_cols,
+#                 mlp_hidden_dims=[512, 256, 128],
+#                 mlp_dropout=0.5,
+#                 mlp_activation="leaky_relu",
+#                 embed_continuous=True,
+#                 mlp_batchnorm=True
+#             )
+#         return model
+    
+#     def configure_optimizers(self):
+#         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+#         return optimizer
+    
 class TabMLP(pl.LightningModule):
     def __init__(self, column_indx, out_features, \
                   cat_emb, continuous_cols):
