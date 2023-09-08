@@ -1,4 +1,4 @@
-model: tabresnet
+model: tabnet
 patience: 50 # For early stopping. How many epochs to wait.
 epochs: 100 # number of epochs
 b_sz: 512 # batch size
@@ -12,7 +12,7 @@ extension: csv # data type extension, supports csv and parquet (parquet yet to b
 n_classes: 2 # number of classes
 ckpt_path: None # if you want to load the model from a specific checkpoint, supply the path to the checkpoint file
 num_feat_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/numerical_clms.csv # a csv file containing the required features
-# categ_feat_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/categorical_clms.csv # a csv file containing the required features
+categ_feat_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/categorical_clms.csv # a csv file containing the required features
 # label_clm: default.payment.next.month
 label_clm: y
 model_storage_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/trained_weights
