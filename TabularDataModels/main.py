@@ -51,6 +51,7 @@ class RunModel:
         self.n_classes = args.n_classes
         self.batch_size = args.b_sz
         self.workers = args.data_workers
+        self.epoch = args.epochs
         data_repo = DataRepo()
         self.dl = data_repo(args)
 
@@ -63,7 +64,7 @@ class RunModel:
     def init_model(self):
 
         if self.m_name == 'mlp':
-            self.model = Mlp(args.epochs, self.dl.input_dim, self.n_classes,
+            self.model = Mlp(self.epoch, self.dl.input_dim, self.n_classes,
                              self.dl, self.batch_size, self.workers,
                                  self.dl.emb_size, self.args.categ_feat_path)
         elif self.m_name == 'cnn':
@@ -73,8 +74,11 @@ class RunModel:
             self.model = SoftOrdCNN(self.dl.input_dim, self.n_classes,
                                     self.dl.emb_size, self.args.categ_feat_path)
         elif self.m_name == 'tabmlp':
-            self.model = TabMLP(self.dl.clm_indx, self.n_classes, \
-                                self.dl.emb_size, self.dl.num_features)
+            self.model = TabMLP(epochs=self.epoch, in_features=self.dl.input_dim,
+                                 out_features=self.n_classes, file_loader=self.dl,
+                                  batch_size=self.batch_size, workers=self.workers,
+                                  column_indx=self.dl.clm_indx,cat_features=self.dl.emb_size,
+                                    num_features=self.dl.num_features)
         elif self.m_name == 'fttransformer':
             self.model = FTransformer(self.dl.clm_indx, self.n_classes, \
                                       self.dl.emb_size, self.dl.num_features)
