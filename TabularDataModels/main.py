@@ -77,8 +77,9 @@ class RunModel:
             self.model = TabMLP(epochs=self.epoch, in_features=self.dl.input_dim,
                                  out_features=self.n_classes, file_loader=self.dl,
                                   batch_size=self.batch_size, workers=self.workers,
-                                  column_indx=self.dl.clm_indx,cat_features=self.dl.emb_size,
-                                    num_features=self.dl.num_features)
+                                  column_indx=self.dl.clm_indx, emb_size=self.dl.emb_size,
+                                    num_columns=self.dl.num_features,
+                                      cat_features=self.args.categ_feat_path)
         elif self.m_name == 'fttransformer':
             self.model = FTransformer(self.dl.clm_indx, self.n_classes, \
                                       self.dl.emb_size, self.dl.num_features)

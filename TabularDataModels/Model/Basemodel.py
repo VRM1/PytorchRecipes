@@ -21,13 +21,15 @@ class BaseLightningModule(pl.LightningModule):
         self.batch_size = batch_size
         self.workers = workers
         self.n_cont, self.n_categ = in_features
+        self.emb_size = emb_size
         num_class = 1
 
         if out_features > 2:
             task_typ = 'multiclass'
 
         # Model-specific initialization
-        self.model = self.create_model(self.n_cont, out_features, cat_features, emb_size)
+        self.model = self.create_model(n_cont=self.n_cont, out_features=out_features,
+                                        cat_features=cat_features, emb_size=emb_size)
         self.configure_optimizers()
 
         self.t_outputs = []
