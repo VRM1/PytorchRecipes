@@ -13,7 +13,7 @@ import torch.nn.functional as F
 # simple 2-layer dense network
 class DenseThreeLayerCateg(nn.Module):
 
-    def __init__(self,in_features, out_features, embedding_sizes, n_cont, d_rate=0.3):
+    def __init__(self,in_features, out_features, embedding_sizes, n_cont, d_rate=0.1):
 
         super().__init__()
         self.embeddings = nn.ModuleList([nn.Embedding(categories, size) \

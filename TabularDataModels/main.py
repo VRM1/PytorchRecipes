@@ -28,6 +28,8 @@ else:
 if not os.path.isdir('trained_weights'):
     os.makedirs('trained_weights')
 
+from lightning.pytorch.callbacks import LearningRateFinder
+
 
 class RunModel:
 
@@ -81,11 +83,19 @@ class RunModel:
                                     num_columns=self.dl.num_features,
                                       cat_features=self.args.categ_feat_path)
         elif self.m_name == 'fttransformer':
-            self.model = FTransformer(self.dl.clm_indx, self.n_classes, \
-                                      self.dl.emb_size, self.dl.num_features)
+            self.model = FTransformer(epochs=self.epoch, in_features=self.dl.input_dim,
+                                 out_features=self.n_classes, file_loader=self.dl,
+                                  batch_size=self.batch_size, workers=self.workers,
+                                  column_indx=self.dl.clm_indx, emb_size=self.dl.emb_size,
+                                    num_columns=self.dl.num_features,
+                                      cat_features=self.args.categ_feat_path)
         elif self.m_name == 'tabresnet':
-            self.model = TResnet(self.dl.clm_indx, self.n_classes, \
-                                 self.dl.emb_size, self.dl.num_features)
+            self.model = TResnet(epochs=self.epoch, in_features=self.dl.input_dim,
+                                 out_features=self.n_classes, file_loader=self.dl,
+                                  batch_size=self.batch_size, workers=self.workers,
+                                  column_indx=self.dl.clm_indx, emb_size=self.dl.emb_size,
+                                    num_columns=self.dl.num_features,
+                                      cat_features=self.args.categ_feat_path)
         if self.args.inference_mode:
             self.model = type(self.model).load_from_checkpoint('{}/{}/best.ckpt'. \
                                                                format(self.args.model_storage_path, self.args.model))
@@ -100,7 +110,7 @@ class RunModel:
 
             self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
                                       min_epochs=1, num_sanity_val_steps=0,
-                                      callbacks=[early_stop_callback, checkpoint_callback])
+                                      callbacks=[early_stop_callback, checkpoint_callback], )
             current_device = torch.cuda.current_device()
             print(f"PyTorch Lightning is using GPU device {current_device}")
         else:

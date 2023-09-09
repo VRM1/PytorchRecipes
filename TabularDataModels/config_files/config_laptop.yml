@@ -1,5 +1,5 @@
 model_parameters:
-  model: tabmlp
+  model: fttransformer
   patience: 15 # For early stopping. How many epochs to wait.
   epochs: 100 # number of epochs
   b_sz: 1024 # batch size
