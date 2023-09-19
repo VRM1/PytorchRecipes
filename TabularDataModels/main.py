@@ -3,7 +3,7 @@ import os
 from argparse import ArgumentParser
 from Utils import initialize_arguments, DataRepo
 import torch.nn as nn
-from Model import Mlp, TabMLP, TResnet, FTransformer, Conv
+from Model import Mlp, TabMLP, TResnet, FTransformer, Conv, AttentionMLP
 from Model import SoftOrdCNN
 from Utils import EarlyStopping
 import pytorch_lightning as pl
@@ -96,6 +96,14 @@ class RunModel:
                                   column_indx=self.dl.clm_indx, emb_size=self.dl.emb_size,
                                     num_columns=self.dl.num_features,
                                       cat_features=self.args.categ_feat_path)
+        elif self.m_name == 'attentionmlp':
+            self.model = AttentionMLP(epochs=self.epoch, in_features=self.dl.input_dim,
+                                 out_features=self.n_classes, file_loader=self.dl,
+                                  batch_size=self.batch_size, workers=self.workers,
+                                  column_indx=self.dl.clm_indx, emb_size=self.dl.emb_size,
+                                    num_columns=self.dl.num_features,
+                                      cat_features=self.args.categ_feat_path)
+        print(self.model)
         if self.args.inference_mode:
             self.model = type(self.model).load_from_checkpoint('{}/{}/best.ckpt'. \
                                                                format(self.args.model_storage_path, self.args.model))

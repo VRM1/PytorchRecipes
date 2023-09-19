@@ -1,7 +1,7 @@
 model_parameters:
   model: tabresnet
   patience: 50 # For early stopping. How many epochs to wait.
-  epochs: 150 # number of epochs
+  epochs: 1000 # number of epochs
   b_sz: 1024 # batch size
   ckpt_path: None # if you want to load the model from a specific checkpoint, supply the path to the checkpoint file
   n_classes: 2 # number of classes

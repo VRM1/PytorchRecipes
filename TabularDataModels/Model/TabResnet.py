@@ -2,6 +2,7 @@ import torch
 from pytorch_widedeep.models import TabResnet
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from .Basemodel import BaseLightningModule
+from pytorch_widedeep.models.tabular.mlp import _attention_layers
 
 class TResnet(BaseLightningModule):
     
@@ -19,7 +20,7 @@ class TResnet(BaseLightningModule):
                 column_idx=self.column_indx,
                 cat_embed_input=self.emb_size,
                 continuous_cols=self.num_clms,
-                mlp_hidden_dims=[512, 256, 128],
+                mlp_hidden_dims=[512, 256, 128, 2],
                 mlp_dropout=0.2,
                 mlp_activation="relu",
                 embed_continuous=True,
@@ -30,7 +31,7 @@ class TResnet(BaseLightningModule):
             model = TabResnet(
                 column_idx=self.column_indx,
                 continuous_cols=self.num_clms,
-                mlp_hidden_dims=[512, 256, 128],
+                mlp_hidden_dims=[512, 256, 128, 2],
                 mlp_dropout=0.5,
                 mlp_activation="leaky_relu",
                 embed_continuous=True,

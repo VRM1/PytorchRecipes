@@ -1,5 +1,6 @@
 import torch
-from pytorch_widedeep.models import FTTransformer
+from pytorch_widedeep.models import FTTransformer, TabTransformer
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from .Basemodel import BaseLightningModule
 
 class FTransformer(BaseLightningModule):
@@ -24,6 +25,8 @@ class FTransformer(BaseLightningModule):
                     use_qkv_bias=True, 
                     attn_dropout=0.1, 
                     ff_dropout=0.1,
+                    mlp_hidden_dims=[256, 128, 2],
+                    mlp_batchnorm=True
                 )
         else:
             # Define the FTTransformer model
@@ -35,13 +38,20 @@ class FTransformer(BaseLightningModule):
                 use_qkv_bias=True, 
                 attn_dropout=0.1, 
                 ff_dropout=0.1,
+                mlp_hidden_dims=[256, 128, 2],
+                mlp_batchnorm=True
             )
         return model
 
     
+    # def configure_optimizers(self):
+    #     optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+    #     return optimizer
+    
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return optimizer
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=10, verbose=True)
+        return {"optimizer":optimizer, "lr_scheduler":scheduler, "monitor":"val_loss"}
     
     def forward(self, batch):
         if len(batch) > 2:

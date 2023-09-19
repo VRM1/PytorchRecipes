@@ -7,3 +7,4 @@ from .TabResnet import TResnet
 from .FTTransformer import FTransformer
 from .Convolution import Conv
 from .SoftOrderingCNN import SoftOrdCNN
+from .AttentionMLP import AttentionMLP

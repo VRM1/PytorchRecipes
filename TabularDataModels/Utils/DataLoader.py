@@ -310,7 +310,7 @@ class DataRepo:
     Use just one file of data in-order to get the input dimension and 
     embedding size.
     '''
-    tab_models = set(['tabmlp','tabresnet', 'fttransformer'])
+    tab_models = set(['tabmlp','tabresnet', 'fttransformer', 'attentionmlp'])
     if args.model in tab_models:
         dm = WideNDeepDataLoader(args)
     else:
