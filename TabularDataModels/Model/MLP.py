@@ -1,5 +1,6 @@
 from .Basemodel import BaseLightningModule
 from .basic_layers import DenseThreeLayer, DenseThreeLayerCateg
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch
 
 # from Utils import CustomDataLoader
@@ -18,9 +19,11 @@ class Mlp(BaseLightningModule):
         else:
             return DenseThreeLayer(n_cont, out_features)
     
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return optimizer
-                
+    # def configure_optimizers(self):
+    #     optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+    #     return optimizer
     
-   
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=5, verbose=True)
+        return {"optimizer":optimizer, "lr_scheduler":scheduler, "monitor":"val_loss"}

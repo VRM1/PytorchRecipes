@@ -28,6 +28,8 @@ else:
 if not os.path.isdir('trained_weights'):
     os.makedirs('trained_weights')
 
+from lightning.pytorch.callbacks import LearningRateFinder
+
 
 class RunModel:
 
@@ -51,6 +53,7 @@ class RunModel:
         self.n_classes = args.n_classes
         self.batch_size = args.b_sz
         self.workers = args.data_workers
+        self.epoch = args.epochs
         data_repo = DataRepo()
         self.dl = data_repo(args)
 
@@ -63,9 +66,9 @@ class RunModel:
     def init_model(self):
 
         if self.m_name == 'mlp':
-            self.model = Mlp(args.epochs, self.dl.input_dim, self.n_classes,
-                             self.dl, self.batch_size, self.workers,
-                                 self.dl.emb_size, self.args.categ_feat_path)
+            self.model = Mlp(epochs=self.epoch, in_features=self.dl.input_dim, out_features=self.n_classes,
+                             file_loader=self.dl, batch_size=self.batch_size, workers=self.workers,
+                                 emb_size=self.dl.emb_size, cat_features=self.args.categ_feat_path)
         elif self.m_name == 'cnn':
             self.model = Conv(self.dl.input_dim, self.n_classes,
                               self.dl.emb_size, self.args.categ_feat_path)
@@ -73,21 +76,33 @@ class RunModel:
             self.model = SoftOrdCNN(self.dl.input_dim, self.n_classes,
                                     self.dl.emb_size, self.args.categ_feat_path)
         elif self.m_name == 'tabmlp':
-            self.model = TabMLP(self.dl.clm_indx, self.n_classes, \
-                                self.dl.emb_size, self.dl.num_features)
+            self.model = TabMLP(epochs=self.epoch, in_features=self.dl.input_dim,
+                                 out_features=self.n_classes, file_loader=self.dl,
+                                  batch_size=self.batch_size, workers=self.workers,
+                                  column_indx=self.dl.clm_indx, emb_size=self.dl.emb_size,
+                                    num_columns=self.dl.num_features,
+                                      cat_features=self.args.categ_feat_path)
         elif self.m_name == 'fttransformer':
-            self.model = FTransformer(self.dl.clm_indx, self.n_classes, \
-                                      self.dl.emb_size, self.dl.num_features)
+            self.model = FTransformer(epochs=self.epoch, in_features=self.dl.input_dim,
+                                 out_features=self.n_classes, file_loader=self.dl,
+                                  batch_size=self.batch_size, workers=self.workers,
+                                  column_indx=self.dl.clm_indx, emb_size=self.dl.emb_size,
+                                    num_columns=self.dl.num_features,
+                                      cat_features=self.args.categ_feat_path)
         elif self.m_name == 'tabresnet':
-            self.model = TResnet(self.dl.clm_indx, self.n_classes, \
-                                 self.dl.emb_size, self.dl.num_features)
+            self.model = TResnet(epochs=self.epoch, in_features=self.dl.input_dim,
+                                 out_features=self.n_classes, file_loader=self.dl,
+                                  batch_size=self.batch_size, workers=self.workers,
+                                  column_indx=self.dl.clm_indx, emb_size=self.dl.emb_size,
+                                    num_columns=self.dl.num_features,
+                                      cat_features=self.args.categ_feat_path)
         if self.args.inference_mode:
             self.model = type(self.model).load_from_checkpoint('{}/{}/best.ckpt'. \
                                                                format(self.args.model_storage_path, self.args.model))
             # re-initialize the file loader
             self.model.file_loader = self.dl
-        early_stop_callback = EarlyStopping(monitor="val_loss", \
-                                            min_delta=0.01, patience=self.args.patience, verbose=True, mode="min")
+        early_stop_callback = EarlyStopping(monitor="val_loss",patience=self.args.patience, \
+                                             verbose=True, mode="min")
         checkpoint_callback = pl_callbacks.ModelCheckpoint(dirpath='{}/{}'. \
                                                            format(self.args.model_storage_path, self.args.model), \
                                                            filename='best', monitor='val_loss', save_last=True)
@@ -95,7 +110,7 @@ class RunModel:
 
             self.trainer = pl.Trainer(accelerator=DEVICE, max_epochs=args.epochs, \
                                       min_epochs=1, num_sanity_val_steps=0,
-                                      callbacks=[early_stop_callback, checkpoint_callback])
+                                      callbacks=[early_stop_callback, checkpoint_callback], )
             current_device = torch.cuda.current_device()
             print(f"PyTorch Lightning is using GPU device {current_device}")
         else:

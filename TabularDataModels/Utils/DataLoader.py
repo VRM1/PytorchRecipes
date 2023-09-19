@@ -229,14 +229,21 @@ class GenericDataModule():
 
     def setup(self, stage=None):
 
+        # if stage == "train":
+        #     self.train_file_loader = DataLoader(CustomFileLoader(self.t_files, self.extension, self.label_clm, \
+        #          self.num_features, self.cat_features), batch_size=self.file_batch_size, \
+        #               num_workers=self.file_workers, collate_fn=collate_irregular_batch)
+        # elif stage == 'validate':
+        #     self.valid_file_loader = DataLoader(CustomFileLoader(self.v_files, self.extension, self.label_clm, \
+        #          self.num_features, self.cat_features), batch_size=self.file_batch_size, \
+        #               num_workers=self.file_workers, collate_fn=collate_irregular_batch)
+            
         if stage == "train":
             self.train_file_loader = DataLoader(CustomFileLoader(self.t_files, self.extension, self.label_clm, \
-                 self.num_features, self.cat_features), batch_size=self.file_batch_size, \
-                      num_workers=self.file_workers, collate_fn=collate_irregular_batch)
+                 self.num_features, self.cat_features), batch_size=self.file_batch_size, collate_fn=collate_irregular_batch)
         elif stage == 'validate':
             self.valid_file_loader = DataLoader(CustomFileLoader(self.v_files, self.extension, self.label_clm, \
-                 self.num_features, self.cat_features), batch_size=self.file_batch_size, \
-                      num_workers=self.file_workers, collate_fn=collate_irregular_batch)
+                 self.num_features, self.cat_features), batch_size=self.file_batch_size, collate_fn=collate_irregular_batch)
             
         else:
             
