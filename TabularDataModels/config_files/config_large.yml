@@ -26,3 +26,4 @@ execution_parameters:
 performance_parameters:
   file_workers: 6  # Number of workers for file loading. file_worker = n, implies we will be reading n files in parallel.
   data_workers: 6  # Number of workers for optimizing data loading, etc.
+
