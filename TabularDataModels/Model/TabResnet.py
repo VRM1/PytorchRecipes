@@ -1,5 +1,6 @@
 import torch
 from pytorch_widedeep.models import TabResnet
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from .Basemodel import BaseLightningModule
 
 class TResnet(BaseLightningModule):
@@ -38,8 +39,9 @@ class TResnet(BaseLightningModule):
         return model
     
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return optimizer
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=10, verbose=True)
+        return {"optimizer":optimizer, "lr_scheduler":scheduler, "monitor":"val_loss"}
     
     def forward(self, batch):
         if len(batch) > 2:

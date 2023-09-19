@@ -66,9 +66,9 @@ class RunModel:
     def init_model(self):
 
         if self.m_name == 'mlp':
-            self.model = Mlp(self.epoch, self.dl.input_dim, self.n_classes,
-                             self.dl, self.batch_size, self.workers,
-                                 self.dl.emb_size, self.args.categ_feat_path)
+            self.model = Mlp(epochs=self.epoch, in_features=self.dl.input_dim, out_features=self.n_classes,
+                             file_loader=self.dl, batch_size=self.batch_size, workers=self.workers,
+                                 emb_size=self.dl.emb_size, cat_features=self.args.categ_feat_path)
         elif self.m_name == 'cnn':
             self.model = Conv(self.dl.input_dim, self.n_classes,
                               self.dl.emb_size, self.args.categ_feat_path)
@@ -101,8 +101,8 @@ class RunModel:
                                                                format(self.args.model_storage_path, self.args.model))
             # re-initialize the file loader
             self.model.file_loader = self.dl
-        early_stop_callback = EarlyStopping(monitor="val_loss", \
-                                            min_delta=0.01, patience=self.args.patience, verbose=True, mode="min")
+        early_stop_callback = EarlyStopping(monitor="val_loss",patience=self.args.patience, \
+                                             verbose=True, mode="min")
         checkpoint_callback = pl_callbacks.ModelCheckpoint(dirpath='{}/{}'. \
                                                            format(self.args.model_storage_path, self.args.model), \
                                                            filename='best', monitor='val_loss', save_last=True)

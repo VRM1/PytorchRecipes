@@ -5,6 +5,7 @@ from pytorch_widedeep.metrics import Accuracy
 import torchmetrics
 import torch.nn as nn
 from .Basemodel import BaseLightningModule
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 class TabMLP(BaseLightningModule):
     
@@ -41,8 +42,9 @@ class TabMLP(BaseLightningModule):
         return model
     
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return optimizer
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=10, verbose=True)
+        return {"optimizer":optimizer, "lr_scheduler":scheduler, "monitor":"val_loss"}
     
     def forward(self, batch):
         if len(batch) > 2:
