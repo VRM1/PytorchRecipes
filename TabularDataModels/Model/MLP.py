@@ -19,9 +19,6 @@ class Mlp(BaseLightningModule):
         else:
             return DenseThreeLayer(n_cont, out_features)
     
-    # def configure_optimizers(self):
-    #     optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-    #     return optimizer
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)

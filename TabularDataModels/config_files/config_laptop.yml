@@ -1,5 +1,5 @@
 model_parameters:
-  model: tabresnet
+  model: attentionmlp
   patience: 50 # For early stopping. How many epochs to wait.
   epochs: 1000 # number of epochs
   b_sz: 1024 # batch size
@@ -21,7 +21,7 @@ data_parameters:
 execution_parameters:
   is_valid: 0
   report_test: 0
-  inference_mode: True # If train mode, set as False, for test mode, set as True
+  inference_mode: False # If train mode, set as False, for test mode, set as True
 
 performance_parameters:
   file_workers: 1  # Number of workers for file loading. file_worker = n, implies we will be reading n files in parallel.

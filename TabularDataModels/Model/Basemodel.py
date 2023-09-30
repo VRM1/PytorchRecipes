@@ -6,7 +6,7 @@ from Utils import CustomDataLoader
 from tqdm.auto import tqdm
 import torch.nn as nn
 import torch
-
+from Utils.CustomMetrics import FocalLoss
 
 
 class BaseLightningModule(pl.LightningModule):
@@ -119,7 +119,8 @@ class BaseLightningModule(pl.LightningModule):
 
     def compute_loss_and_metrics(self, batch):
         out, y = self(batch)
-        loss_fn = nn.CrossEntropyLoss()
+        # loss_fn = nn.CrossEntropyLoss()
+        loss_fn = FocalLoss()
         loss = loss_fn(out, y)
         preds = out.softmax(dim=-1)
         prob_ones = preds[:,1]
