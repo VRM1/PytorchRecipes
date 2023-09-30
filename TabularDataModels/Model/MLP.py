@@ -1,12 +1,8 @@
-from .Basemodel import BaseLightningModule
+from .BaseModel import BaseLightningModule
 from .basic_layers import DenseThreeLayer, DenseThreeLayerCateg
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch
 
-# from Utils import CustomDataLoader
-# from torch.utils.data import DataLoader
-# from tqdm import tqdm
-# from tqdm.auto import tqdm
 
 class Mlp(BaseLightningModule):
     

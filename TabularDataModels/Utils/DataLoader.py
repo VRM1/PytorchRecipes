@@ -221,7 +221,7 @@ class GenericDataModule():
     def emb_size(self):
         if self.args.categ_feat_path:
             num_categ = pd.read_csv(self.args.categ_feat_path).values.flatten()
-            self._emb_size = [(c, min(50, (c+1)//2)) for c in num_categ]
+            self._emb_size = [(c, min(32, (c+1)//2)) for c in num_categ]
             # self._emb_size = [(c, 32) for c in num_categ]
         return self._emb_size
         

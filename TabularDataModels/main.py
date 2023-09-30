@@ -14,6 +14,7 @@ from pytorch_lightning import callbacks as pl_callbacks
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import time
 import warnings
+warnings.filterwarnings('ignore', category=UserWarning)
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 torch.manual_seed(112)
@@ -27,8 +28,6 @@ else:
 
 if not os.path.isdir('trained_weights'):
     os.makedirs('trained_weights')
-
-from lightning.pytorch.callbacks import LearningRateFinder
 
 
 class RunModel:
@@ -68,7 +67,8 @@ class RunModel:
         if self.m_name == 'mlp':
             self.model = Mlp(epochs=self.epoch, in_features=self.dl.input_dim, out_features=self.n_classes,
                              file_loader=self.dl, batch_size=self.batch_size, workers=self.workers,
-                                 emb_size=self.dl.emb_size, cat_features=self.args.categ_feat_path)
+                               learning_rate=self.lr, emb_size=self.dl.emb_size,
+                                 cat_features=self.args.categ_feat_path)
         elif self.m_name == 'cnn':
             self.model = Conv(self.dl.input_dim, self.n_classes,
                               self.dl.emb_size, self.args.categ_feat_path)
@@ -130,7 +130,8 @@ class RunModel:
         if args.ckpt_path != 'None':
 
             # need to modify this line to just selt.train.fit(model)
-            self.trainer.fit(model=self.model, ckpt_path=args.ckpt_path)
+            self.trainer.fit(model=self.model, ckpt_path=args.ckpt_path, train_dataloaders=self.dl,
+                             val_dataloaders=self.dl)
         else:
             self.trainer.fit(model=self.model)
 

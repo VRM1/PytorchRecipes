@@ -1,12 +1,13 @@
 model_parameters:
-  model: attentionmlp
-  patience: 50 # For early stopping. How many epochs to wait.
-  epochs: 1000 # number of epochs
+  model: mlp
+  patience: 15 # For early stopping. How many epochs to wait.
+  epochs: 100 # number of epochs
   b_sz: 1024 # batch size
   ckpt_path: None # if you want to load the model from a specific checkpoint, supply the path to the checkpoint file
   n_classes: 2 # number of classes
   file_b_sz: 1 # batch size for reading file. Example, file_b_sz=10 means you will read 10 parquet/csv files at one go
   model_storage_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/trained_weights
+  learning_rate: 0.002
 
 data_parameters:
   train_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/fold1/train # can be a directory or a file

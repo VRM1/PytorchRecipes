@@ -1,7 +1,7 @@
 import torch
 from pytorch_widedeep.models import FTTransformer, TabTransformer
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from .Basemodel import BaseLightningModule
+from .BaseModel import BaseLightningModule
 
 class FTransformer(BaseLightningModule):
     

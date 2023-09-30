@@ -4,7 +4,7 @@ from pytorch_widedeep.models import TabMlp
 from pytorch_widedeep.metrics import Accuracy
 import torchmetrics
 import torch.nn as nn
-from .Basemodel import BaseLightningModule
+from .BaseBatchModel import BaseLightningModule
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 class TabMLP(BaseLightningModule):

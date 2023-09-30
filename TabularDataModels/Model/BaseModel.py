@@ -7,22 +7,24 @@ from tqdm.auto import tqdm
 import torch.nn as nn
 import torch
 from Utils.CustomMetrics import FocalLoss
+from Utils import initialize_arguments, DataRepo
 
 
 class BaseLightningModule(pl.LightningModule):
     
-    def __init__(self, epochs, in_features, out_features, file_loader,
-                 batch_size, workers=1, learning_rate=0.001, emb_size=None, cat_features=False):
+    def __init__(self, epochs, in_features, out_features, batch_size,
+                  workers=1, learning_rate=0.001, emb_size=None,
+                    cat_features=False, **kwargs):
         super(BaseLightningModule, self).__init__()
         
         task_typ = 'binary'
         self.epochs = epochs
-        self.file_loader = file_loader
         self.batch_size = batch_size
         self.workers = workers
         self.n_cont, self.n_categ = in_features
         self.emb_size = emb_size
         self.lr = learning_rate
+        self.args = kwargs.get('args')
         num_class = 1
 
         if out_features > 2:
@@ -70,36 +72,6 @@ class BaseLightningModule(pl.LightningModule):
         """To be overridden by derived classes"""
         raise NotImplementedError
     
-    def _prepare_dataloader(self, mode='train'):
-        self.file_loader.setup(mode)
-        fl_loader = None
-        if mode == 'train':
-            fl_loader = self.file_loader.train_dataloader()
-        elif mode == 'validate':
-            fl_loader = self.file_loader.val_dataloader()
-        elif mode == 'test':
-            fl_loader = self.file_loader.predict_dataloader()
-        
-        splits = self.__get_batch_size(fl_loader)
-        
-        def generator():
-            for epoch in range(self.epochs):
-                for i, d in tqdm(enumerate(fl_loader)):
-                    data_loader = DataLoader(CustomDataLoader(d), batch_size=self.batch_size,
-                                                num_workers=self.workers, pin_memory=True,
-                                                prefetch_factor=64)
-                    for batch in data_loader:
-                        if mode == 'train':
-                            self.t_len += batch[0].shape[0]
-                        yield batch
-                        
-        progress_bar = tqdm(
-            generator(),
-            total=len(fl_loader) * splits,
-            desc=mode.capitalize()
-        )
-        return progress_bar
-
     def train_dataloader(self) -> TRAIN_DATALOADERS:
        return self._prepare_dataloader('train')
 
@@ -112,11 +84,6 @@ class BaseLightningModule(pl.LightningModule):
         return self._prepare_dataloader('test')
     
     
-    def __get_batch_size(self, file_loader):
-        d = next(enumerate(file_loader))[1]
-        data_loader = DataLoader(CustomDataLoader(d), batch_size=self.batch_size)
-        return len(data_loader)
-
     def compute_loss_and_metrics(self, batch):
         out, y = self(batch)
         # loss_fn = nn.CrossEntropyLoss()
