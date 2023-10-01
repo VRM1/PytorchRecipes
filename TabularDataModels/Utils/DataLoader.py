@@ -79,15 +79,44 @@ Parameters:
     data: 
         A list of instances of the CustomFileLoader class, each containing a subset of the data to be concatenated.
 '''
+# class CustomDataLoader(Dataset):
+#     def __init__(self, data: List):
+        
+#         # data = next(data)
+#         self.c_data = None
+#         if len(data['categorical_data']):
+#             self.c_data = data['categorical_data']
+#         self.n_data = data['numerical_data']
+#         self.label = data['label']
+
+#     def __getitem__(self, index):
+
+#         if self.n_data is not None and self.c_data is not None:
+#             return self.n_data[index], self.c_data[index], self.label[index]
+#         else:
+#             return self.n_data[index], self.label[index]
+
+#     def __len__(self):
+#         return len(self.n_data)
+
 class CustomDataLoader(Dataset):
     def __init__(self, data: List):
         
-        # data = next(data)
-        self.c_data = None
-        if len(data['categorical_data']):
-            self.c_data = data['categorical_data']
-        self.n_data = data['numerical_data']
-        self.label = data['label']
+        self.c_data = []
+        self.n_data = []
+        self.label = []
+        with tqdm(total=len(data)) as progress_bar:
+            for d in data:
+                self.n_data.append(data['numerical_data'])
+                self.c_data.append(data['categorical_data'])
+                self.label.append(data['label'])
+                progress_bar.update(1)
+
+        if len(self.c_data[0]):
+            self.c_data = ConcatDataset(self.c_data)
+        else:
+            self.c_data = None
+
 
     def __getitem__(self, index):
 
@@ -98,7 +127,6 @@ class CustomDataLoader(Dataset):
 
     def __len__(self):
         return len(self.n_data)
-
 '''
 collate_irregular_batch (function): A custom collate function used to handle irregular batch sizes,
 by concatenating the numerical and categorical data tensors into a dictionary.

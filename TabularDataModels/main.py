@@ -126,14 +126,15 @@ class RunModel:
                  min_epochs=1, callbacks=[early_stop_callback, checkpoint_callback])
 
     def train(self):
+        if self.args.data_in_memory:
 
-        if args.ckpt_path != 'None':
+            if args.ckpt_path != 'None':
 
-            # need to modify this line to just selt.train.fit(model)
-            self.trainer.fit(model=self.model, ckpt_path=args.ckpt_path, train_dataloaders=self.dl,
-                             val_dataloaders=self.dl)
-        else:
-            self.trainer.fit(model=self.model)
+                # need to modify this line to just selt.train.fit(model)
+                self.trainer.fit(model=self.model, ckpt_path=args.ckpt_path, train_dataloaders=self.dl,
+                                val_dataloaders=self.dl)
+            else:
+                self.trainer.fit(model=self.model, train_dataloaders=self.dl)
 
     def test(self, load_best_model=False):
 

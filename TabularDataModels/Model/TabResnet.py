@@ -1,7 +1,7 @@
 import torch
 from pytorch_widedeep.models import TabResnet
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from .BaseBatchModel import BaseLightningModule
+from .BaseModel import BaseLightningModule
 from pytorch_widedeep.models.tabular.mlp import _attention_layers
 
 class TResnet(BaseLightningModule):

@@ -72,16 +72,16 @@ class BaseLightningModule(pl.LightningModule):
         """To be overridden by derived classes"""
         raise NotImplementedError
     
-    def train_dataloader(self) -> TRAIN_DATALOADERS:
-       return self._prepare_dataloader('train')
+    # def train_dataloader(self) -> TRAIN_DATALOADERS:
+    #    return self._prepare_dataloader('train')
 
-    def val_dataloader(self) -> EVAL_DATALOADERS:
+    # def val_dataloader(self) -> EVAL_DATALOADERS:
     
-       return self._prepare_dataloader('validate')
+    #    return self._prepare_dataloader('validate')
     
-    def predict_dataloader(self) -> EVAL_DATALOADERS:
+    # def predict_dataloader(self) -> EVAL_DATALOADERS:
         
-        return self._prepare_dataloader('test')
+    #     return self._prepare_dataloader('test')
     
     
     def compute_loss_and_metrics(self, batch):

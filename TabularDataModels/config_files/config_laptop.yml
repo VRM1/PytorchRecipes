@@ -18,6 +18,7 @@ data_parameters:
   categ_feat_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/categorical_clms.csv # a csv file containing the required features
   # label_clm: default.payment.next.month
   label_clm: y
+  data_in_memory: True
 
 execution_parameters:
   is_valid: 0
