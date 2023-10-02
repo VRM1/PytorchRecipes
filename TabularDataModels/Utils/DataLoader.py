@@ -79,27 +79,27 @@ Parameters:
     data: 
         A list of instances of the CustomFileLoader class, each containing a subset of the data to be concatenated.
 '''
-# class CustomDataLoader(Dataset):
-#     def __init__(self, data: List):
+class BatchDataLoader(Dataset):
+    def __init__(self, data: List):
         
-#         # data = next(data)
-#         self.c_data = None
-#         if len(data['categorical_data']):
-#             self.c_data = data['categorical_data']
-#         self.n_data = data['numerical_data']
-#         self.label = data['label']
+        # data = next(data)
+        self.c_data = None
+        if len(data['categorical_data']):
+            self.c_data = data['categorical_data']
+        self.n_data = data['numerical_data']
+        self.label = data['label']
 
-#     def __getitem__(self, index):
+    def __getitem__(self, index):
 
-#         if self.n_data is not None and self.c_data is not None:
-#             return self.n_data[index], self.c_data[index], self.label[index]
-#         else:
-#             return self.n_data[index], self.label[index]
+        if self.n_data is not None and self.c_data is not None:
+            return self.n_data[index], self.c_data[index], self.label[index]
+        else:
+            return self.n_data[index], self.label[index]
 
-#     def __len__(self):
-#         return len(self.n_data)
+    def __len__(self):
+        return len(self.n_data)
 
-class CustomDataLoader(Dataset):
+class InMemoryDataLoader(Dataset):
     def __init__(self, data: List):
         
         self.c_data = []
@@ -107,11 +107,12 @@ class CustomDataLoader(Dataset):
         self.label = []
         with tqdm(total=len(data)) as progress_bar:
             for d in data:
-                self.n_data.append(data['numerical_data'])
-                self.c_data.append(data['categorical_data'])
-                self.label.append(data['label'])
+                self.n_data.append(d['numerical_data'])
+                self.c_data.append(d['categorical_data'])
+                self.label.append(d['label'])
                 progress_bar.update(1)
-
+        self.n_data = ConcatDataset(self.n_data)
+        self.label = ConcatDataset(self.label)
         if len(self.c_data[0]):
             self.c_data = ConcatDataset(self.c_data)
         else:
@@ -194,7 +195,7 @@ Constructor Variables
         numerical representation.
 
 '''
-class GenericDataModule():
+class GenericDataModule(pl.LightningDataModule):
     def __init__(self, args):
         super().__init__()
         self.args = args
@@ -202,6 +203,7 @@ class GenericDataModule():
         self.valid_dir = args.valid_path
         self.test_dir = args.test_path
         self.extension = args.extension
+        self.in_memory = args.data_in_memory
         self.file_workers = args.file_workers
         self.num_features: List(str) = None
         self.cat_features: List(str) = None
@@ -229,6 +231,9 @@ class GenericDataModule():
                     self.te_files = [os.path.join(self.test_dir, f) for f in listdir(self.test_dir) \
                         if f.endswith(self.extension)]
         else:
+            self.te_files = [os.path.join(self.test_dir, f) for f in listdir(self.test_dir) \
+                        if f.endswith(self.extension)]
+            
             self.t_files = [os.path.join(self.train_dir, f) for f in listdir(self.train_dir) \
                             if f.endswith(self.extension)]
             self.v_files = [os.path.join(self.valid_dir, f) for f in listdir(self.valid_dir) \
@@ -266,31 +271,51 @@ class GenericDataModule():
         #          self.num_features, self.cat_features), batch_size=self.file_batch_size, \
         #               num_workers=self.file_workers, collate_fn=collate_irregular_batch)
             
-        if stage == "train":
+        if stage == "train" or stage=='fit' or stage=='validate':
             self.train_file_loader = DataLoader(CustomFileLoader(self.t_files, self.extension, self.label_clm, \
                  self.num_features, self.cat_features), batch_size=self.file_batch_size, collate_fn=collate_irregular_batch)
-        elif stage == 'validate':
+
             self.valid_file_loader = DataLoader(CustomFileLoader(self.v_files, self.extension, self.label_clm, \
                  self.num_features, self.cat_features), batch_size=self.file_batch_size, collate_fn=collate_irregular_batch)
             
         else:
             
             self.test_file_loader = DataLoader(CustomFileLoader(self.te_files, self.extension, self.label_clm, \
-                 self.num_features, self.cat_features), batch_size=self.file_batch_size, \
-                      num_workers=self.file_workers, collate_fn=collate_irregular_batch)
+                 self.num_features, self.cat_features), batch_size=self.file_batch_size, collate_fn=collate_irregular_batch)
     
     def train_dataloader(self):
 
-        return self.train_file_loader
+        if self.in_memory:
+            return DataLoader(InMemoryDataLoader(self.train_file_loader), \
+                            batch_size=self.batch_size, num_workers=6, prefetch_factor=64)
+        else:
+
+            return self.train_file_loader
 
     
     def val_dataloader(self):
 
-        return self.valid_file_loader
+        if self.in_memory:
+            return DataLoader(InMemoryDataLoader(self.valid_file_loader), \
+                           batch_size=self.batch_size, num_workers=6, prefetch_factor=64)
+        else:
+            return self.valid_file_loader
         
     def predict_dataloader(self):
 
-        return self.test_file_loader
+        if self.in_memory:
+            return DataLoader(InMemoryDataLoader(self.test_file_loader), \
+                           batch_size=self.batch_size, num_workers=6, prefetch_factor=64)
+        else:
+            return self.test_file_loader
+    
+    def test_dataloader(self):
+
+        if self.in_memory:
+            return DataLoader(InMemoryDataLoader(self.test_file_loader), \
+                           batch_size=self.batch_size, num_workers=6, prefetch_factor=64)
+        else:
+            return self.test_file_loader
 
 
 

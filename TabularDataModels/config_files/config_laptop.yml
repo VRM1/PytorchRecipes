@@ -18,12 +18,12 @@ data_parameters:
   categ_feat_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/categorical_clms.csv # a csv file containing the required features
   # label_clm: default.payment.next.month
   label_clm: y
-  data_in_memory: True
+  data_in_memory: False
 
 execution_parameters:
   is_valid: 0
   report_test: 0
-  inference_mode: False # If train mode, set as False, for test mode, set as True
+  inference_mode: True # If train mode, set as False, for test mode, set as True
 
 performance_parameters:
   file_workers: 1  # Number of workers for file loading. file_worker = n, implies we will be reading n files in parallel.
