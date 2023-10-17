@@ -1,10 +1,12 @@
 import pytorch_lightning as pl
+import torch
 import torchmetrics
 from torch.utils.data import DataLoader
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS
 from Utils import BatchDataLoader, DataRepo
 from tqdm.auto import tqdm
 from Utils.CustomMetrics import FocalLoss
+import torch.nn as nn
 
 
 
@@ -118,12 +120,16 @@ class BaseLightningModule(pl.LightningModule):
         
         return self._prepare_dataloader('test')
     
+    def l1_penalty(self, var):
+        return torch.abs(var).sum()
     
     def compute_loss_and_metrics(self, batch):
+        lambda1 = 0.0001
         out, y = self(batch)
-        # loss_fn = nn.CrossEntropyLoss()
-        loss_fn = FocalLoss()
+        loss_fn = nn.CrossEntropyLoss()
+        # loss_fn = FocalLoss()
         loss = loss_fn(out, y)
+        loss += lambda1 * (self.l1_penalty(self.model.mask_emb) + self.l1_penalty(self.model.mask_cont))
         preds = out.softmax(dim=-1)
         prob_ones = preds[:,1]
         accuracy = self.acc(prob_ones, y)

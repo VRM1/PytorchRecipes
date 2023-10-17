@@ -1,19 +1,20 @@
 from .BaseModel import BaseLightningModule
-from .basic_layers import BayesianMLP
+from .basic_layers import BayesianDenseThreeLayerCateg
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch
 import torch.nn as nn
 
-class Mlp(BaseLightningModule):
+
+class BayesianMlp(BaseLightningModule):
     
     def __init__(self, *args, **kwargs):
-        super(Mlp, self).__init__(*args, **kwargs)
+        super(BayesianMlp, self).__init__(*args, **kwargs)
 
     def create_model(self, n_cont, out_features, cat_features, emb_size):
         if cat_features:
-            return BayesianMLP((n_cont, self.n_categ), out_features, emb_size, n_cont)
+            return BayesianDenseThreeLayerCateg((n_cont, self.n_categ), out_features, emb_size, n_cont)
         else:
-            return BayesianMLP(n_cont, out_features)
+            return BayesianDenseThreeLayerCateg(n_cont, out_features)
     
     
     def configure_optimizers(self):

@@ -3,7 +3,8 @@ import os
 from argparse import ArgumentParser
 from Utils import initialize_arguments, DataRepo
 import torch.nn as nn
-from Model import Mlp, TabMLP, TResnet, FTransformer, Conv, AttentionMLP
+from Model import Mlp, BayesianMlp, TabMLP, TResnet
+from Model import FTransformer, Conv, AttentionMLP
 from Model import SoftOrdCNN
 from Utils import EarlyStopping
 import pytorch_lightning as pl
@@ -15,6 +16,7 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import time
 import warnings
 import pdb
+torch.set_float32_matmul_precision('medium')
 warnings.filterwarnings('ignore', category=UserWarning)
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -67,6 +69,11 @@ class RunModel:
 
         if self.m_name == 'mlp':
             self.model = Mlp(epochs=self.epoch, in_features=self.dl.input_dim, out_features=self.n_classes,
+                              batch_size=self.batch_size, workers=self.workers,
+                               learning_rate=self.lr, emb_size=self.dl.emb_size,
+                                 cat_features=self.args.categ_feat_path, args=self.args)
+        elif self.m_name == 'bmlp':
+            self.model = BayesianMlp(epochs=self.epoch, in_features=self.dl.input_dim, out_features=self.n_classes,
                               batch_size=self.batch_size, workers=self.workers,
                                learning_rate=self.lr, emb_size=self.dl.emb_size,
                                  cat_features=self.args.categ_feat_path, args=self.args)

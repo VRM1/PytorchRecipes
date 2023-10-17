@@ -46,7 +46,7 @@ class LinearGroupNJ(Module):
     [3] Louizos, Christos, Karen Ullrich, and Max Welling. "Bayesian Compression for Deep Learning." NIPS (2017).
     """
 
-    def __init__(self, in_features, out_features, cuda=False, init_weight=None, init_bias=None, clip_var=None):
+    def __init__(self, in_features, out_features, cuda=True, init_weight=None, init_bias=None, clip_var=None):
 
         super(LinearGroupNJ, self).__init__()
         self.cuda = cuda
