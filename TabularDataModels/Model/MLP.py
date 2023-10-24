@@ -20,7 +20,7 @@ class Mlp(BaseLightningModule):
             return MaskedDenseThreeLayerCateg((n_cont, self.n_categ), out_features, emb_size, n_cont)
         else:
             return MaskedDenseThreeLayerCateg(n_cont, out_features)
-    
+        print('hmm')
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)

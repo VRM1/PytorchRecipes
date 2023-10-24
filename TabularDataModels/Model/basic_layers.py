@@ -232,6 +232,11 @@ class MaskedDenseThreeLayerCateg(nn.Module):
         self.bn2 = nn.BatchNorm1d(256)
         self.bn3 = nn.BatchNorm1d(128)
 
+    def gumbel_softmax(self, logits, temperature=1.0):
+        gumbels = -torch.empty_like(logits).exponential_().log()  # Sample from Gumbel(0, 1)
+        y = logits + gumbels
+        return F.softmax(y / temperature, dim=-1)
+
     def forward(self, x_cont, x_cat):
         x = [e(x_cat[:,i]) for i,e in enumerate(self.embeddings)]
         x = torch.cat(x, 1)

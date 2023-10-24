@@ -15,6 +15,10 @@ from pytorch_lightning import callbacks as pl_callbacks
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import time
 import warnings
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import torch.nn.functional as F
 import pdb
 torch.set_float32_matmul_precision('medium')
 warnings.filterwarnings('ignore', category=UserWarning)
@@ -152,6 +156,32 @@ class RunModel:
             else:
                 self.trainer.fit(model=self.model)
 
+    def get_feature_importance(self, model):
+        # Extract mask values for embeddings and continuous features
+        # emb_importance = model.model.mask_emb.detach().cpu().numpy()
+        # cont_importance = model.model.mask_cont.detach().cpu().numpy()
+
+        emb_importance = F.softmax(model.model.mask_emb, dim=-1).detach().cpu().numpy()
+        cont_importance = F.softmax(model.model.mask_cont, dim=-1).detach().cpu().numpy()
+        
+        # Combine them into a single array
+        combined_importance = np.concatenate([emb_importance, cont_importance])
+        
+        return combined_importance
+
+
+    def plot_feature_importance(self, importance, feature_names):
+        # Sort features based on importance
+        sorted_idx = np.argsort(importance)
+        
+        # Plot
+        plt.figure(figsize=(10, 15))
+        plt.title("Feature Importance")
+        plt.barh(range(len(sorted_idx)), importance[sorted_idx], align='center')
+        plt.yticks(range(len(sorted_idx)), [feature_names[i] for i in sorted_idx])
+        plt.xlabel("Importance Value")
+        plt.show()
+
     def test(self, load_best_model=False):
 
         # self.trainer.test(self.model, self.dl)
@@ -165,6 +195,11 @@ class RunModel:
         print(classification_report(y, preds.argmax(axis=1)))
         print("ROC-AUC:{}".format(roc_auc_score(y, preds[:, 1])))
         print("PrecisionRecall-AUC:{}".format(average_precision_score(y, preds[:, 1])))
+        feature_names = pd.read_csv(self.args.num_feat_path)
+
+        importance_values = self.get_feature_importance(self.model)
+        self.plot_feature_importance(importance_values, feature_names)
+
 
 
 if __name__ == '__main__':
@@ -175,7 +210,7 @@ if __name__ == '__main__':
     start_time = time.time()
     if not args.inference_mode:
         run_model.train()
-        run_model.test()
+        # run_model.test()
     else:
         run_model.test()
     print("--- %s seconds ---" % (time.time() - start_time))

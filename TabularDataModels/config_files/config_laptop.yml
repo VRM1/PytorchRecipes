@@ -10,15 +10,15 @@ model_parameters:
   learning_rate: 0.002
 
 data_parameters:
-  train_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/fold1/train # can be a directory or a file
-  valid_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/fold1/valid # can be a directory or a file
-  test_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/fold1/test # can be a directory or a file
+  train_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/fold2/train # can be a directory or a file
+  valid_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/fold2/valid # can be a directory or a file
+  test_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/fold2/test # can be a directory or a file
   extension: csv # data type extension, supports csv and parquet (parquet yet to be implemented)
-  num_feat_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/numerical_clms.csv # a csv file containing the required features
-  categ_feat_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/categorical_clms.csv # a csv file containing the required features
+  num_feat_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/numerical_clms_w_random_feat.csv # a csv file containing the required features
+  categ_feat_path: /home/vineeth/Documents/GitWorkSpace/PytorchRecipes/TabularDataModels/Dataset/bank/categorical_clms_w_random_feat.csv # a csv file containing the required features
   # label_clm: default.payment.next.month
   label_clm: y
-  data_in_memory: False
+  data_in_memory: True
 
 execution_parameters:
   is_valid: 0
