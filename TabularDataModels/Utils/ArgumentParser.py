@@ -43,6 +43,8 @@ def initialize_arguments(parser):
      parser.add_argument('-categ_feat_path', help='required categorical features', required=False, type=str)
      parser.add_argument('-target_label', help='name of the target feature column', \
           required=False, type=str)
+     parser.add_argument('-data_in_memory', help='set true if the entire dataloader should be in the memory and false if not', \
+         type=bool, default=False)
      args = parser.parse_args()
 
      if args.config != 'None':
