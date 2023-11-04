@@ -129,7 +129,7 @@ class BaseLightningModule(pl.LightningModule):
         loss_fn = nn.CrossEntropyLoss()
         # loss_fn = FocalLoss()
         loss = loss_fn(out, y)
-        loss += lambda1 * (self.l1_penalty(self.model.mask_emb) + self.l1_penalty(self.model.mask_cont))
+        # loss += lambda1 * (self.l1_penalty(self.model.mask_emb) + self.l1_penalty(self.model.mask_cont))
         preds = out.softmax(dim=-1)
         prob_ones = preds[:,1]
         accuracy = self.acc(prob_ones, y)

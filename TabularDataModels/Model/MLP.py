@@ -9,18 +9,18 @@ class Mlp(BaseLightningModule):
     def __init__(self, *args, **kwargs):
         super(Mlp, self).__init__(*args, **kwargs)
 
-    # def create_model(self, n_cont, out_features, cat_features, emb_size):
-    #     if cat_features:
-    #         return DenseThreeLayerCateg((n_cont, self.n_categ), out_features, emb_size, n_cont)
-    #     else:
-    #         return DenseThreeLayer(n_cont, out_features)
-        
     def create_model(self, n_cont, out_features, cat_features, emb_size):
         if cat_features:
-            return MaskedDenseThreeLayerCateg((n_cont, self.n_categ), out_features, emb_size, n_cont)
+            return DenseThreeLayerCateg((n_cont, self.n_categ), out_features, emb_size, n_cont)
         else:
-            return MaskedDenseThreeLayerCateg(n_cont, out_features)
-        print('hmm')
+            return DenseThreeLayer(n_cont, out_features)
+        
+    # def create_model(self, n_cont, out_features, cat_features, emb_size):
+    #     if cat_features:
+    #         return MaskedDenseThreeLayerCateg((n_cont, self.n_categ), out_features, emb_size, n_cont)
+    #     else:
+    #         return MaskedDenseThreeLayerCateg(n_cont, out_features)
+    #     print('hmm')
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)

@@ -197,8 +197,8 @@ class RunModel:
         print("PrecisionRecall-AUC:{}".format(average_precision_score(y, preds[:, 1])))
         feature_names = pd.read_csv(self.args.num_feat_path)
 
-        importance_values = self.get_feature_importance(self.model)
-        self.plot_feature_importance(importance_values, feature_names)
+        # importance_values = self.get_feature_importance(self.model)
+        # self.plot_feature_importance(importance_values, feature_names)
 
 
 
