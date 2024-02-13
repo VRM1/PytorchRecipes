@@ -3,7 +3,8 @@ import os
 from argparse import ArgumentParser
 from Utils import initialize_arguments, DataRepo
 import torch.nn as nn
-from Model import Mlp, TabMLP, TResnet, FTransformer, Conv
+from Model import Mlp, Conv
+from Model import TabMLP, TResnet, FTransformer
 from Model import SoftOrdCNN
 from Utils import EarlyStopping
 import pytorch_lightning as pl
